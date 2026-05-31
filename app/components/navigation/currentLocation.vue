@@ -41,7 +41,7 @@ watch(() => props.truckCoords, (coords) => {
 <style lang="scss" scoped>
 .current-location-hud {
     position: absolute;
-    bottom: 40px;
+    bottom: 75px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
