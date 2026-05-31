@@ -96,6 +96,7 @@
         "theme": "Theme",
         "title": "Settings",
         "traffic": "Traffic Layer",
+        "trafficServer": "Traffic Server",
         "truckMarkerSize": "Truck Marker Size",
         "units": "Units"
     },

@@ -96,6 +96,7 @@
         "theme": "Design",
         "title": "Einstellungen",
         "traffic": "Verkehrsschicht",
+        "trafficServer": "Verkehrsserver",
         "truckMarkerSize": "Truck Marker Größe",
         "units": "Einheiten"
     },

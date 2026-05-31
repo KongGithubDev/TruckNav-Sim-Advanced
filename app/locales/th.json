@@ -96,6 +96,7 @@
         "theme": "ธีม",
         "title": "การตั้งค่า",
         "traffic": "ชั้นจราจร",
+        "trafficServer": "เซิร์ฟเวอร์จราจร",
         "truckMarkerSize": "ขนาดไอคอนรถบรรทุก",
         "units": "หน่วยวัด"
     },
