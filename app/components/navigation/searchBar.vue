@@ -3,6 +3,8 @@ import { ref, watch } from 'vue';
 import { useCitySearch } from '~/composables/useCitySearch';
 import type { CityData } from '~/composables/useCitySearch';
 
+const { t } = useTranslations();
+
 const emit = defineEmits<{
     (e: 'select', city: CityData): void
 }>();
@@ -10,6 +12,7 @@ const emit = defineEmits<{
 const { loadCities, searchCities, isLoaded } = useCitySearch();
 const searchQuery = ref("");
 const results = ref<CityData[]>([]);
+const recentDestinations = ref<CityData[]>([]);
 const isFocused = ref(false);
 
 watch(() => isLoaded.value, () => {
@@ -18,6 +21,12 @@ watch(() => isLoaded.value, () => {
 
 onMounted(() => {
     loadCities();
+    const stored = localStorage.getItem('recent-destinations');
+    if (stored) {
+        try {
+            recentDestinations.value = JSON.parse(stored);
+        } catch(e){}
+    }
 });
 
 watch(searchQuery, (newVal) => {
@@ -32,6 +41,17 @@ const onSelect = (city: CityData) => {
     searchQuery.value = "";
     results.value = [];
     isFocused.value = false;
+    
+    const existingIdx = recentDestinations.value.findIndex(c => c.token === city.token);
+    if (existingIdx !== -1) {
+        recentDestinations.value.splice(existingIdx, 1);
+    }
+    recentDestinations.value.unshift(city);
+    if (recentDestinations.value.length > 5) {
+        recentDestinations.value.pop();
+    }
+    localStorage.setItem('recent-destinations', JSON.stringify(recentDestinations.value));
+
     emit('select', city);
 };
 
@@ -40,30 +60,38 @@ const handleBlur = () => {
         isFocused.value = false;
     }, 200);
 };
+
+const displayItems = computed(() => {
+    if (searchQuery.value.length > 1) return results.value;
+    return recentDestinations.value;
+});
 </script>
 
 <template>
-    <div class="search-bar-container" :class="{ 'has-results': results.length > 0 && isFocused }">
+    <div class="search-bar-container" :class="{ 'has-results': displayItems.length > 0 && isFocused }">
         <div class="search-input-wrapper glass-panel">
             <Icon name="lucide:search" class="search-icon" />
             <input 
                 v-model="searchQuery" 
                 type="text" 
-                placeholder="Search destination..." 
+                :placeholder="t('common.searchDestination')" 
                 @focus="isFocused = true"
                 @blur="handleBlur"
             />
         </div>
         
-        <div v-if="results.length > 0 && isFocused" class="search-results glass-panel">
+        <div v-if="displayItems.length > 0 && isFocused" class="search-results glass-panel">
+            <div v-if="searchQuery.length <= 1" class="recent-header">
+                {{ t('common.recentDestinations') }}
+            </div>
             <div 
-                v-for="city in results" 
+                v-for="city in displayItems" 
                 :key="city.token" 
                 class="search-result-item"
                 @click="onSelect(city)"
             >
                 <div class="city-info">
-                    <Icon name="lucide:map-pin" class="pin-icon" />
+                    <Icon :name="searchQuery.length > 1 ? 'lucide:map-pin' : 'lucide:history'" class="pin-icon" />
                     <div class="city-text">
                         <span class="city-name">{{ city.name }}</span>
                         <span class="city-country">{{ city.countryToken.toUpperCase() }}</span>
@@ -133,6 +161,14 @@ const handleBlur = () => {
         border-radius: 0 0 24px 24px;
         border-top: none;
         overflow: hidden;
+
+        .recent-header {
+            padding: 12px 16px 4px 16px;
+            font-size: 1.2rem;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
 
         .search-result-item {
             padding: 12px 16px;

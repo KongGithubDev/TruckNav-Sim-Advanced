@@ -33,6 +33,13 @@ export const useRouteController = (
     const destinationName = ref<string>("");
     const routeDistance = ref<number>(0);
     const routeEta = ref<string>("");
+    const arrivalTime = ref<string>(""); // e.g. "19:45"
+
+    // Alternative Route
+    const altRoutePath = shallowRef<[number, number][] | null>(null);
+    const altRouteEta = ref<string>("");
+    const altRouteDistance = ref<number>(0);
+    const hasAltRoute = computed(() => altRoutePath.value !== null);
 
     const savedDestination = ref<[number, number] | null>(null);
 
@@ -542,10 +549,62 @@ export const useRouteController = (
             map.value.addImage("destination-icon", pinImg, { pixelRatio: 2.5 });
         }
 
+        // Alt route layer (drawn first so it's behind)
+        map.value.addSource("alt-route-line", {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+        });
+        map.value.addLayer({
+            id: "alt-route-line",
+            type: "line",
+            source: "alt-route-line",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+                "line-color": "#6b7a8d",
+                "line-width": [
+                    "interpolate", ["linear"], ["zoom"],
+                    10, 6, 11.5, 8,
+                ],
+                "line-opacity": 0.65,
+                "line-dasharray": [2, 2],
+            },
+        }, "all-sprites");
+
         map.value.addSource("route-line", {
             type: "geojson",
             data: { type: "FeatureCollection", features: [] },
         });
+        
+        map.value.addSource("route-passed-line", {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+        });
+
+        map.value.addLayer(
+            {
+                id: "route-passed-line",
+                type: "line",
+                source: "route-passed-line",
+                layout: { "line-join": "round", "line-cap": "round" },
+                paint: {
+                    "line-color": "#5a6a7c",
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        10,
+                        8,
+                        10.2,
+                        9,
+                        10.5,
+                        6,
+                        11.5,
+                        11,
+                    ],
+                },
+            },
+            "all-sprites",
+        );
 
         map.value.addLayer(
             {
@@ -746,18 +805,26 @@ export const useRouteController = (
                 if (createEndMarker) addDestinationMarker(result.endId);
 
                 routeDistance.value = Math.round(totalKm);
-                const h = Math.floor(totalHours);
-                const m = Math.round((totalHours - h) * 60);
-                
-                // Add Traffic Delay initially if we already have it
+                // Add Traffic Delay
                 const { routeTrafficInfo } = useTrafficData();
+                const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60); // 5 in-game minutes per congested chunk
+                const finalInGameHours = totalHours + trafficDelayInGameHours;
+
+                const h = Math.floor(finalInGameHours);
+                const m = Math.round((finalInGameHours - h) * 60);
+                
                 let trafficDelayStr = "";
-                if (routeTrafficInfo.value && routeTrafficInfo.value.congestedSegmentsCount > 0) {
-                    const delayMins = routeTrafficInfo.value.congestedSegmentsCount * 2; // e.g. 2 min per congested chunk
-                    trafficDelayStr = ` (+${delayMins}m traffic)`;
+                if (trafficDelayInGameHours > 0) {
+                    trafficDelayStr = ` (+${Math.round(trafficDelayInGameHours * 60)}m traffic)`;
                 }
                 
                 routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
+
+                // Compute real-world arrival clock time
+                const realWorldHours = finalInGameHours / sdkScale;
+                const now = new Date();
+                const arrivalDate = new Date(now.getTime() + realWorldHours * 3600000);
+                arrivalTime.value = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 destinationName.value = getGameLocationName(
                     clickCoords[0],
@@ -795,6 +862,39 @@ export const useRouteController = (
                 routeFound.value = true;
                 currentRouteIndex.value = 0;
                 updateProfile("lastDestination", savedDestination.value);
+
+                // Compute alternative route in the background (different avgSpeed bias)
+                altRoutePath.value = null;
+                altRouteEta.value = "";
+                altRouteDistance.value = 0;
+                const altResult = await findFlexibleRoute(
+                    startNodeId.value!,
+                    toRaw(clickCoords),
+                    truckHeading,
+                    startConfig.type as "road" | "yard",
+                    startConfig.projectedCoords,
+                    sdkScale,
+                    avgSpeed * 0.75, // bias toward slower/smaller roads
+                );
+                if (altResult && altResult.displayPath) {
+                    // Only show alt if it meaningfully differs from primary
+                    const altLastIdx = (altResult.rawPath.length - 1) * 2;
+                    const altKm = altResult.stats[altLastIdx];
+                    const primaryKm = routeDistance.value;
+                    const altH = altResult.stats[altLastIdx];
+                    if (Math.abs(altKm - primaryKm) > 5) { // at least 5km different
+                        altRoutePath.value = altResult.displayPath;
+                        const altHours = altResult.stats[altLastIdx + 1] || 0;
+                        const aH = Math.floor(altHours);
+                        const aM = Math.round((altHours - aH) * 60);
+                        altRouteEta.value = `${aH}h ${aM}min`;
+                        altRouteDistance.value = Math.round(altKm);
+                        // Draw alt route
+                        if (map.value) {
+                            setMapLibreData(map.value, "alt-route-line", "LineString", altResult.displayPath);
+                        }
+                    }
+                }
             } else {
                 routeFound.value = false;
             }
@@ -867,23 +967,37 @@ export const useRouteController = (
         const remHours = totalHours - currentHours;
         routeDistance.value = Math.round(remKm);
 
-        if (remHours > 0) {
-            const h = Math.floor(remHours);
-            const m = Math.round((remHours - h) * 60);
-            
+        if (remHours > 0 || remKm > 0) {
+            // Dynamic ETA based on current truck speed
+            const currentSpeed = avgSpeed > 10 ? avgSpeed : 60; // Assume 60km/h if stopped or very slow
+            const dynamicInGameHours = remKm / currentSpeed;
+
+            // Blend the original ETA (based on speed limits) with dynamic ETA
+            const blendedHours = (dynamicInGameHours + remHours) / 2;
+
             // Add Traffic Delay
             const { routeTrafficInfo } = useTrafficData();
-            let trafficDelayStr = "";
-            let extraClass = false;
+            const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60);
+            const finalInGameHours = blendedHours + trafficDelayInGameHours;
             
-            if (routeTrafficInfo.value && routeTrafficInfo.value.congestedSegmentsCount > 0) {
-                const delayMins = routeTrafficInfo.value.congestedSegmentsCount * 2;
-                trafficDelayStr = ` (+${delayMins}m traffic)`;
+            const h = Math.floor(finalInGameHours);
+            const m = Math.round((finalInGameHours - h) * 60);
+            
+            let trafficDelayStr = "";
+            if (trafficDelayInGameHours > 0) {
+                trafficDelayStr = ` (+${Math.round(trafficDelayInGameHours * 60)}m traffic)`;
             }
             
             routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
+
+            // Real-world arrival time
+            const realWorldHours = finalInGameHours / sdkScale;
+            const now = new Date();
+            const arrivalDate = new Date(now.getTime() + realWorldHours * 3600000);
+            arrivalTime.value = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         } else {
             routeEta.value = "Arriving...";
+            arrivalTime.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
         if (fullRouteDirections.value.length > 1) {
@@ -923,6 +1037,19 @@ export const useRouteController = (
             }
         } else {
             nextTurnDistance.value = 0;
+        }
+
+        // Slice route path into passed and remaining sections
+        if (map.value && currentRoutePath.value && currentRoutePath.value.length > 0) {
+            const passedPath = currentRoutePath.value.slice(0, currentRouteIndex.value + 1);
+            const remainingPath = currentRoutePath.value.slice(currentRouteIndex.value);
+            
+            if (passedPath.length > 1) {
+                setMapLibreData(map.value, "route-passed-line", "LineString", passedPath, { color: "#5a6a7c" });
+            }
+            if (remainingPath.length > 1) {
+                setMapLibreData(map.value, "route-line", "LineString", remainingPath, { color: activeSettings.value.routeColor });
+            }
         }
 
         const now = Date.now();
@@ -976,14 +1103,39 @@ export const useRouteController = (
         lastMathPos.value = null;
     }
 
-    return {
-        worker,
-        destinationName,
-        routeDistance,
-        routeEta,
-        isCalculating,
-        routeFound,
-        currentRoutePath,
+        function swapToAltRoute() {
+            if (!altRoutePath.value || !map.value) return;
+
+            // Make alt route the main route
+            currentRoutePath.value = altRoutePath.value;
+            routeDistance.value = altRouteDistance.value;
+            routeEta.value = altRouteEta.value;
+            
+            // Clear alternative route
+            altRoutePath.value = null;
+            altRouteEta.value = "";
+            altRouteDistance.value = 0;
+            
+            // Redraw
+            if (map.value) {
+                setMapLibreData(map.value, "route-line", "LineString", currentRoutePath.value, { color: activeSettings.value.routeColor });
+                deleteMapLibreData(map.value, "alt-route-line");
+            }
+        }
+
+        return {
+            worker,
+            destinationName,
+            routeDistance,
+            routeEta,
+            arrivalTime,
+            isCalculating,
+            routeFound,
+            currentRoutePath,
+            altRoutePath,
+            altRouteEta,
+            altRouteDistance,
+            hasAltRoute,
         isWorkerReady,
         isRouteActive,
         fullRouteDirections,
@@ -996,5 +1148,6 @@ export const useRouteController = (
         updateRouteProgress,
         clearRouteState,
         redrawRouteWithTraffic,
+        swapToAltRoute,
     };
 };

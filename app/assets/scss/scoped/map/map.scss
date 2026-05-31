@@ -14,6 +14,11 @@
     outline: none !important;
 }
 
+.map-container.is-daytime .maplibregl-canvas {
+    filter: brightness(1.8) saturate(1.2);
+    transition: filter 2s ease-in-out;
+}
+
 .ui-safe-container {
     position: absolute;
     top: 0;
@@ -84,4 +89,95 @@
 .icon {
     width: var(--hud-btn-size);
     height: var(--hud-btn-size);
+}
+
+.resume-navigation-btn {
+    position: absolute;
+    bottom: 220px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 50px;
+    background: #1a73e8;
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 20px rgba(26, 115, 232, 0.5);
+    cursor: pointer;
+    z-index: 200;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+        box-shadow: 0 6px 28px rgba(26, 115, 232, 0.7);
+        transform: translateX(-50%) scale(1.04);
+    }
+
+    &:active {
+        transform: translateX(-50%) scale(0.97);
+    }
+}
+
+.resume-pop-enter-active,
+.resume-pop-leave-active {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.resume-pop-enter-from,
+.resume-pop-leave-to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px) scale(0.9);
+}
+
+.alt-route-card {
+    position: absolute;
+    bottom: 250px;
+    right: 80px;
+    background: rgba(45, 60, 78, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    z-index: 150;
+    transition: transform 0.2s, background 0.2s;
+
+    &:hover {
+        background: rgba(55, 70, 88, 0.95);
+        transform: scale(1.05);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    .alt-icon {
+        color: #8899aa;
+        font-size: 24px;
+    }
+
+    .alt-text-container {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .alt-label {
+        font-size: 0.8rem;
+        color: #aab8c5;
+        font-weight: 500;
+        line-height: 1.2;
+    }
+
+    .alt-time {
+        font-size: 1.1rem;
+        color: #fff;
+        font-weight: 700;
+    }
 }

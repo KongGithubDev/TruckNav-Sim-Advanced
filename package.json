@@ -6,6 +6,7 @@
         "preinstall": "npx npm-force-resolutions",
         "build": "nuxt build",
         "dev": "nuxt dev",
+        "host": "nuxt dev --host",
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "patch-package && nuxt prepare",

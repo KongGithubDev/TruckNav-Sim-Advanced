@@ -19,6 +19,8 @@
         "off": "Off",
         "reset": "Reset",
         "resume": "Resume",
+        "searchDestination": "Search destination...",
+        "recentDestinations": "Recent Destinations",
         "selectGame": "Select Game",
         "startNavigation": "Start Navigation",
         "stop": "Stop"
@@ -95,7 +97,7 @@
         "textTheme": "Text Theme",
         "theme": "Theme",
         "title": "Settings",
-        "traffic": "Traffic Layer",
+        "traffic": "Traffic Layer (Truckersmp)",
         "trafficServer": "Traffic Server",
         "truckMarkerSize": "Truck Marker Size",
         "units": "Units"

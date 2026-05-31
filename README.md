@@ -5,6 +5,12 @@
 
 <br />
 
+<div align="center">
+  <img src="preview.png" alt="TruckNav-Sim-Advanced UI Preview" width="100%" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);" />
+</div>
+
+<br />
+
 **TruckNav-Sim-Advanced** is a next-generation, external GPS navigation system built with TypeScript and Vue.js. It transforms any device (phone, tablet, or second monitor) into a fully functional, highly interactive GPS for your ETS2/ATS journeys. Operating via an intuitive web interface, it provides real-time tracking, intelligent routing, and an immersive driving experience.
 
 ---
@@ -13,13 +19,15 @@
 
 We've completely overhauled the UI and feature set to deliver a modern, premium navigation experience reminiscent of real-world apps like Google Maps:
 
-*   **Intelligent Voice Warnings:** Audio alerts for overspeeding, customizable to your system's language (including Thai).
-*   **Auto Day/Night Theme:** The UI dynamically switches to Dark Mode perfectly synced with in-game nighttime hours.
-*   **3D Perspective Driving Mode:** Tilt the camera and enable auto-follow for a seamless, 3D navigation perspective.
-*   **Floating Smart Search:** Instantly search for any city or destination and pan the map with a single click.
-*   **Live Traffic Progress Bar (TruckersMP):** A visual indicator at the bottom of the screen displaying real-time traffic congestion levels along your active route, specifically pulling data from TruckersMP servers.
-*   **Traffic-Adjusted ETA:** Your Estimated Time of Arrival dynamically updates, adding delay minutes based on real-time TruckersMP server traffic data.
-*   **Current Location HUD:** Always know your exact location with a floating badge displaying your current city and country.
+*   **Intelligent Voice Warnings:** Audio alerts for overspeeding, upcoming turns (1km & 200m), and traffic congestion. Customizable to your system's language (including Siri Thai).
+*   **Alternative Routes:** Dynamically computes alternative paths (scenic/slower routes) and presents them as tap-able faint grey lines with time difference comparisons.
+*   **Auto Day/Night Theme:** The UI dynamically switches to Dark Mode perfectly synced with in-game nighttime hours. During daytime, the map brightens automatically.
+*   **Auto-Zoom on Turns:** Smoothly pans the camera pitch and zooms in automatically when you are within 800m of a complex intersection or turn.
+*   **Route Path Progress:** The active route path turns grey automatically behind your truck as you drive, preventing confusion on complex interchanges.
+*   **Floating Speedometer:** A minimal, mobile-style floating speedometer widget with an integrated speed limit badge that glows red when overspeeding.
+*   **Route Overview:** Instantly zoom out to view your entire remaining route and active traffic conditions, then seamlessly snap back to truck-following mode.
+*   **Live Traffic Progress Bar (TruckersMP):** A visual indicator at the bottom of the screen displaying real-time traffic congestion levels along your active route.
+*   **Traffic-Adjusted ETA:** Your Estimated Time of Arrival dynamically updates based on your current truck speed and real-time TruckersMP server traffic data.
 *   **Glassmorphism UI:** A sleek, translucent, and modern Material Design aesthetic with backdrop blurring and smooth animations.
 
 ---

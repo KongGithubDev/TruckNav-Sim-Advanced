@@ -86,6 +86,8 @@ const {
     toggleAutoFollow,
     is3DMode,
     toggle3DMode,
+    setTurnCamera,
+    resumeCameraLock,
 } = useMapCamera(map);
 
 //
@@ -99,6 +101,7 @@ const {
     destinationName,
     routeDistance,
     routeEta,
+    arrivalTime,
     isCalculating: isCalculatingRoute,
     isWorkerReady,
     initWorkerData,
@@ -109,13 +112,68 @@ const {
     nextTurnDistance,
     currentRoutePath,
     redrawRouteWithTraffic,
+    hasAltRoute,
+    altRouteEta,
+    swapToAltRoute,
 } = useRouteController(map, adjacency, nodeCoords, stopNavigationMode);
 
-//
 //
 // Settings Controller
 const { activeSettings, settings } = useSettings();
 const { t } = useTranslations();
+const { speakWarning } = useVoiceWarnings();
+
+let spoken1km = false;
+let spoken200m = false;
+let currentInstruction = "";
+const isInOverviewMode = ref(false);
+let lastCongestedSegments = 0;
+
+watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav]) => {
+    if (!nav) {
+        setTurnCamera(false);
+        return;
+    }
+    
+    // Auto-zoom on turns
+    if (dist > 0 && dist < 0.8) {
+        setTurnCamera(true);
+    } else {
+        setTurnCamera(false);
+    }
+
+    if (!activeSettings.value.voiceWarnings) return;
+    const nextInstruction = dirs[1]?.text;
+    if (!nextInstruction) return;
+
+    if (nextInstruction !== currentInstruction) {
+        currentInstruction = nextInstruction;
+        spoken1km = false;
+        spoken200m = false;
+    }
+
+    if (dist > 0 && dist < 1.0 && !spoken1km) {
+        speakWarning('turn_1km', nextInstruction, 5);
+        spoken1km = true;
+    }
+    
+    if (dist > 0 && dist < 0.2 && !spoken200m) {
+        speakWarning('turn_200m', nextInstruction, 5);
+        spoken200m = true;
+    }
+});
+
+// Traffic Alert Voice
+watch(routeTrafficInfo, (info) => {
+    if (!info || !activeSettings.value.voiceWarnings) return;
+    const segments = info.congestedSegments || 0;
+    if (segments > 0 && segments > lastCongestedSegments) {
+        const delayMin = segments * 5;
+        speakWarning('traffic_ahead', `Traffic ahead – expect a ${delayMin}-minute delay`, 120);
+    }
+    lastCongestedSegments = segments;
+});
+
 
 //
 //
@@ -349,6 +407,18 @@ onMounted(async () => {
         map.value = markRaw(mapInstance);
         if (!map.value) return;
 
+        // Add Zoom Control
+        map.value.addControl(new maplibregl.NavigationControl({
+            showCompass: false,
+            showZoom: true
+        }), "bottom-right");
+
+        // Add Scale Control
+        map.value.addControl(new maplibregl.ScaleControl({
+            maxWidth: 100,
+            unit: settings.value.units === 'metric' ? 'metric' : 'imperial'
+        }), "bottom-right");
+
         const initialTruckImg = await generateTruckIcon(
             activeSettings.value.themeColor,
         );
@@ -485,6 +555,35 @@ const onResetNorth = () => {
     });
 };
 
+const onRouteOverview = () => {
+    if (!map.value || !currentRoutePath.value || currentRoutePath.value.length === 0) return;
+    const path = currentRoutePath.value;
+    
+    let minLng = path[0][0];
+    let minLat = path[0][1];
+    let maxLng = path[0][0];
+    let maxLat = path[0][1];
+
+    for (let i = 1; i < path.length; i++) {
+        const pt = path[i];
+        if (pt[0] < minLng) minLng = pt[0];
+        if (pt[0] > maxLng) maxLng = pt[0];
+        if (pt[1] < minLat) minLat = pt[1];
+        if (pt[1] > maxLat) maxLat = pt[1];
+    }
+    
+    isInOverviewMode.value = true;
+    map.value.fitBounds(
+        [[minLng, minLat], [maxLng, maxLat]],
+        { padding: 80, duration: 1500 }
+    );
+};
+
+const onResumeNavigation = () => {
+    isInOverviewMode.value = false;
+    resumeCameraLock();
+};
+
 const onToggleFullscreen = async () => {
     const target = document.documentElement;
 
@@ -521,7 +620,7 @@ const onCancelRoute = () => {
         class="full-page-wrapper"
         :class="{ 'platform-mobile': isMobile }"
     >
-        <div ref="mapEl" class="map-container"></div>
+        <div ref="mapEl" class="map-container" :class="{ 'is-daytime': activeSettings.textColor === 'light' }"></div>
 
         <div class="ui-safe-container">
             <Transition name="ui-layer-fade">
@@ -529,6 +628,8 @@ const onCancelRoute = () => {
                     <Transition name="fade">
                         <LoadingScreen v-if="loading" :progress="progress" />
                     </Transition>
+                    
+                    <RerouteToast :is-calculating="isCalculatingRoute" />
 
                     <SearchBar @select="onCitySelect" />
 
@@ -604,6 +705,10 @@ const onCancelRoute = () => {
                             <Icon name="lucide:fullscreen" class="icon" />
                         </HudButton>
 
+                        <HudButton v-if="isRouteActive" :onClick="onRouteOverview">
+                            <Icon name="lucide:route" class="icon" />
+                        </HudButton>
+
                         <HudButton :onClick="onResetNorth">
                             <Icon name="lucide:compass" class="icon" />
                         </HudButton>
@@ -658,6 +763,37 @@ const onCancelRoute = () => {
                         :speed-limit="speedLimit"
                     />
 
+                    <FloatingSpeed
+                        v-if="isNavigating"
+                        :truck-speed="truckSpeed"
+                        :speed-limit="speedLimit"
+                    />
+
+                    <Transition name="resume-pop">
+                        <button
+                            v-if="isInOverviewMode && isNavigating"
+                            class="resume-navigation-btn"
+                            @click="onResumeNavigation"
+                        >
+                            <Icon name="lucide:navigation" />
+                            {{ t('common.resume') }}
+                        </button>
+                    </Transition>
+
+                    <Transition name="resume-pop">
+                        <div
+                            v-if="hasAltRoute && isRouteActive && !isNavigating"
+                            class="alt-route-card"
+                            @click="swapToAltRoute"
+                        >
+                            <Icon name="lucide:git-branch" class="alt-icon" />
+                            <div class="alt-text-container">
+                                <span class="alt-label">Alternative</span>
+                                <span class="alt-time">{{ altRouteEta }}</span>
+                            </div>
+                        </div>
+                    </Transition>
+
                     <div class="warnings">
                         <WarningSlide
                             :show-if="hasInGameMarker && !isRouteActive"
@@ -682,6 +818,7 @@ const onCancelRoute = () => {
                             v-model:is-sheet-hidden="isSheetHidden"
                             :route-distance="routeDistance"
                             :route-eta="routeEta"
+                            :arrival-time="arrivalTime"
                             :speed-limit="speedLimit"
                             :truck-speed="truckSpeed"
                         />

@@ -17,8 +17,10 @@
         "offlineTryAgain": "ออฟไลน์ ลองเปิดใหม่อีกครั้ง",
         "on": "เปิด",
         "off": "ปิด",
+        "recentDestinations": "จุดหมายล่าสุด",
         "reset": "รีเซ็ต",
         "resume": "ดำเนินการต่อ",
+        "searchDestination": "ค้นหาจุดหมาย...",
         "selectGame": "เลือกเกม",
         "startNavigation": "เริ่มนำทาง",
         "stop": "หยุด"
@@ -95,7 +97,7 @@
         "textTheme": "ธีมตัวอักษร",
         "theme": "ธีม",
         "title": "การตั้งค่า",
-        "traffic": "ชั้นจราจร",
+        "traffic": "ชั้นจราจร (Truckersmp)",
         "trafficServer": "เซิร์ฟเวอร์จราจร",
         "truckMarkerSize": "ขนาดไอคอนรถบรรทุก",
         "units": "หน่วยวัด"

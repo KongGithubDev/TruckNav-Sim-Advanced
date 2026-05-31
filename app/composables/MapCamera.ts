@@ -24,6 +24,9 @@ export const useMapCamera = (map: Ref<Map | null>) => {
     let animationFrameId: number | null = null;
     let isEasing = false;
     let easeTimeout: ReturnType<typeof setTimeout> | null = null;
+    
+    let isTurnCameraActive = false;
+    let baseZoom = 11;
 
     let autoLockTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -90,7 +93,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
                     bearing: is3DMode.value
                         ? currentTruckHeading
                         : (isAutoFollowEnabled.value && isNavigating.value ? currentTruckHeading : 0),
-                    pitch: is3DMode.value ? 60 : 0,
+                    pitch: is3DMode.value ? (isTurnCameraActive ? 45 : 60) : 0,
                     padding: isNavigating.value ? PADDING_NAV : PADDING_FREE,
                 });
             }
@@ -170,10 +173,39 @@ export const useMapCamera = (map: Ref<Map | null>) => {
         map.value.easeTo({
             center: currentTruckCoords,
             bearing: is3DMode.value ? currentTruckHeading : (isNavigating.value ? currentTruckHeading : 0),
-            pitch: is3DMode.value ? 60 : 0,
+            pitch: is3DMode.value ? (isTurnCameraActive ? 45 : 60) : 0,
             duration: 350,
             padding: isNavigating.value ? PADDING_NAV : PADDING_FREE,
         });
+    };
+
+    const setTurnCamera = (approaching: boolean) => {
+        if (!map.value || !isCameraLocked.value || !is3DMode.value) return;
+        
+        if (approaching && !isTurnCameraActive) {
+            isTurnCameraActive = true;
+            baseZoom = map.value.getZoom();
+            isEasing = true;
+            if (easeTimeout) clearTimeout(easeTimeout);
+            easeTimeout = setTimeout(() => { isEasing = false; }, 1000);
+            
+            map.value.easeTo({
+                pitch: 45,
+                zoom: Math.max(baseZoom, 12),
+                duration: 1000
+            });
+        } else if (!approaching && isTurnCameraActive) {
+            isTurnCameraActive = false;
+            isEasing = true;
+            if (easeTimeout) clearTimeout(easeTimeout);
+            easeTimeout = setTimeout(() => { isEasing = false; }, 1000);
+            
+            map.value.easeTo({
+                pitch: 60,
+                zoom: baseZoom,
+                duration: 1000
+            });
+        }
     };
 
     const toggleAutoFollow = () => {
@@ -271,12 +303,13 @@ export const useMapCamera = (map: Ref<Map | null>) => {
         updateMarkerSize,
         updateMarkerImage,
         initCameraListeners,
-        followTruck,
-        stopNavigationMode,
         resumeCameraLock,
         toggleAutoFollow,
-        toggle3DMode,
+        followTruck,
         lockCamera,
         startNavigationMode,
+        stopNavigationMode,
+        toggle3DMode,
+        setTurnCamera,
     };
 };

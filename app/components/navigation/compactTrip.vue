@@ -3,6 +3,7 @@ const props = defineProps<{
     routeDistanceConverted: number;
     distanceUnit: string;
     routeEta: string;
+    arrivalTime: string;
 }>();
 </script>
 
@@ -11,7 +12,7 @@ const props = defineProps<{
         <Icon name="lucide:flag-triangle-right" size="22" />
         <div class="right">
             <span>{{ routeDistanceConverted }} {{ distanceUnit }}, </span>
-            <span>{{ routeEta }}</span>
+            <span>{{ routeEta }} <span style="color:#a1a1aa;">(ETA {{ arrivalTime }})</span></span>
         </div>
         <button class="nav-btn icon-btn">
             <Icon name="lucide:chevron-up" />

@@ -19,6 +19,8 @@
         "off": "Aus",
         "reset": "Zurücksetzen",
         "resume": "Fortsetzen",
+        "searchDestination": "Ziel suchen...",
+        "recentDestinations": "Letzte Ziele",
         "selectGame": "Spiel auswählen",
         "startNavigation": "Navigation starten",
         "stop": "Stopp"
@@ -95,7 +97,7 @@
         "textTheme": "Text Design",
         "theme": "Design",
         "title": "Einstellungen",
-        "traffic": "Verkehrsschicht",
+        "traffic": "Verkehrsschicht (Truckersmp)",
         "trafficServer": "Verkehrsserver",
         "truckMarkerSize": "Truck Marker Größe",
         "units": "Einheiten"

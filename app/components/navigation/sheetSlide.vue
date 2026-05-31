@@ -5,6 +5,7 @@ const props = defineProps<{
     speedLimit: number;
     destinationName: string;
     routeEta: string;
+    arrivalTime: string;
     routeDistance: number;
     isNavigating: boolean;
     onStopNavigation: () => void;
@@ -87,6 +88,7 @@ watch(
                     :route-distance-converted="routeDistanceConverted"
                     :distance-unit="distanceUnit"
                     :route-eta="routeEta"
+                    :arrival-time="arrivalTime"
                 />
             </Transition>
 
@@ -120,7 +122,7 @@ watch(
                             class="icon-eta"
                         />
                         <div>
-                            <div class="value">{{ routeEta }}</div>
+                            <div class="value">{{ routeEta }} <span style="font-size: 1.4rem; color: #a1a1aa;">(ETA {{ arrivalTime }})</span></div>
                             <div class="label">
                                 {{ t("common.estimatedTime") }}
                             </div>
