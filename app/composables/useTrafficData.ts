@@ -186,7 +186,7 @@ async function fetchTrafficData(
         server: String(serverId),
     });
 
-    const url = `/api/traffic?${params.toString()}`;
+    const url = `https://tracker.ets2map.com/v3/area?${params.toString()}`;
     console.log(`[Traffic] Fetching: x1=${Math.floor(x1)} y1=${Math.floor(y1)} x2=${Math.floor(x2)} y2=${Math.floor(y2)}`);
 
     try {
