@@ -1,20 +1,6 @@
 <div align="center">
   <h1>🚛 TruckNav-Sim-Advanced</h1>
   <p><strong>The Ultimate External GPS Navigation System for Euro Truck Simulator 2 & American Truck Simulator</strong></p>
-
-  <a href="https://discord.gg/C5BTXCF2jC">
-      <img src="https://img.shields.io/badge/Discord-Join_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
-  </a>
-  <a href="https://forum.scssoft.com/viewtopic.php?t=349145">
-      <img src="https://img.shields.io/badge/SCS_Forums-Official_Topic-2C3E50?style=for-the-badge&logo=discourse&logoColor=white" alt="SCS Forums">
-  </a>
-  <a href="https://buymeacoffee.com/raresmnt">
-      <img src="https://img.shields.io/badge/Support_the_Project-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy Me A Coffee">
-  </a>
-  <br />
-  <br />
-  <img width="400" alt="TruckNav-Sim-Advanced Preview 1" src="https://github.com/user-attachments/assets/6860e478-3c32-4143-97c4-fca8876ce90f" />
-  <img width="400" alt="TruckNav-Sim-Advanced Preview 2" src="https://github.com/user-attachments/assets/a977ea5f-af6f-49e2-adc4-78c8afef9879" />
 </div>
 
 <br />
