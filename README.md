@@ -32,6 +32,16 @@ We've completely overhauled the UI and feature set to deliver a modern, premium 
 
 ---
 
+## 🚧 Coming Soon
+
+These features are actively in development and will be arriving in a future update:
+
+*   **True Alternative Routes (Multi-Path):** Improve the routing engine to generate genuinely distinct alternative paths by using edge-exclusion / penalization within the A\* algorithm — similar to how Google Maps offers "Fastest" vs "Fewer Highways" options. The UI card and map overlay layer are already in place, awaiting the routing engine upgrade.
+*   **Lane Guidance:** Visual lane indicators on the HUD showing which lane to be in before complex intersections and exits.
+*   **Rerouting Animation:** Smooth visual feedback when the route is being recalculated due to deviation.
+
+---
+
 ## Compatibility & Status
 
 Currently in **Active Development / Beta**. While the core navigation engine is robust, the custom routing graph (built via QGIS) is continually being refined to handle complex intersections and prefabs.

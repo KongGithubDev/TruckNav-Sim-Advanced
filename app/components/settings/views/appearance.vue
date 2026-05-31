@@ -350,6 +350,7 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                 :route-distance-converted="999"
                 distance-unit="mi"
                 route-eta="9h 59min"
+                arrival-time="20:00"
             />
         </PreviewSetting>
 

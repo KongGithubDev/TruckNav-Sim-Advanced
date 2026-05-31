@@ -22,14 +22,6 @@ const fuelConverted = computed(() => literToUserUnits(props.fuel));
 <template>
     <div class="game-information" :class="{ 'is-native': !isWeb }">
         <div class="truck-info">
-            <div
-                v-show="settings.activeUiComponents.includes('speed')"
-                class="truck-speed-div"
-            >
-                <div class="road-perspective"></div>
-                <p class="truck-speed">{{ truckSpeedConverted }}</p>
-                <p class="km-h">{{ speedUnit }}</p>
-            </div>
         </div>
 
         <div v-if="gameConnected" class="gas-sleep-time">

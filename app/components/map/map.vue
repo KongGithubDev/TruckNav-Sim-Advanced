@@ -163,16 +163,6 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
     }
 });
 
-// Traffic Alert Voice
-watch(routeTrafficInfo, (info) => {
-    if (!info || !activeSettings.value.voiceWarnings) return;
-    const segments = info.congestedSegments || 0;
-    if (segments > 0 && segments > lastCongestedSegments) {
-        const delayMin = segments * 5;
-        speakWarning('traffic_ahead', `Traffic ahead – expect a ${delayMin}-minute delay`, 120);
-    }
-    lastCongestedSegments = segments;
-});
 
 
 //
@@ -185,6 +175,17 @@ const {
     setEnabled,
     routeTrafficInfo,
 } = useTrafficData();
+
+// Traffic Alert Voice
+watch(routeTrafficInfo, (info) => {
+    if (!info || !activeSettings.value.voiceWarnings) return;
+    const segments = info.congestedSegments || 0;
+    if (segments > 0 && segments > lastCongestedSegments) {
+        const delayMin = segments * 5;
+        speakWarning('traffic_ahead', `Traffic ahead – expect a ${delayMin}-minute delay`, 120);
+    }
+    lastCongestedSegments = segments;
+});
 
 let uiTimer: ReturnType<typeof setTimeout> | null = null;
 let routeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -782,7 +783,7 @@ const onCancelRoute = () => {
 
                     <Transition name="resume-pop">
                         <div
-                            v-if="hasAltRoute && isRouteActive && !isNavigating"
+                            v-if="hasAltRoute && isRouteActive"
                             class="alt-route-card"
                             @click="swapToAltRoute"
                         >

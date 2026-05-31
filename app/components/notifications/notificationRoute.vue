@@ -18,7 +18,7 @@ const notificationName = computed(() => {
 });
 
 const isVisible = computed(() => {
-    return props.isCalculatingRoute || props.isRouteFound !== null;
+    return props.isRouteFound !== null && !props.isCalculatingRoute;
 });
 </script>
 
