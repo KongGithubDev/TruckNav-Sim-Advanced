@@ -103,6 +103,8 @@ const {
     routeFound,
     fullRouteDirections,
     nextTurnDistance,
+    currentRoutePath,
+    redrawRouteWithTraffic,
 } = useRouteController(map, adjacency, nodeCoords, stopNavigationMode);
 
 //
@@ -110,6 +112,17 @@ const {
 // Settings Controller
 const { activeSettings, settings } = useSettings();
 const { t } = useTranslations();
+
+//
+//
+// Traffic Data
+const {
+    setupTrafficLayers,
+    startPolling,
+    stopPolling,
+    setEnabled,
+    routeTrafficInfo,
+} = useTrafficData();
 
 let uiTimer: ReturnType<typeof setTimeout> | null = null;
 let routeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -291,6 +304,34 @@ watch(gameConnected, (isConnected) => {
     }
 });
 
+// Watch for traffic setting changes
+watch(
+    () => activeSettings.value.showTraffic,
+    (enabled) => {
+        if (!map.value) return;
+        const game = settings.value.selectedGame || "ets2";
+        setEnabled(enabled, map.value, game);
+    },
+);
+
+// Watch for route or traffic settings changes to update polling
+watch(
+    [currentRoutePath, () => activeSettings.value.showTraffic, () => activeSettings.value.trafficServerId],
+    ([routePath, showTraffic]) => {
+        if (!map.value || !showTraffic) return;
+        const game = settings.value.selectedGame || "ets2";
+        startPolling(map.value, game, routePath || undefined);
+    },
+);
+
+watch(
+    () => routeTrafficInfo.value?.routeColors,
+    (colors) => {
+        if (!isRouteActive.value) return;
+        redrawRouteWithTraffic(colors || null);
+    }
+);
+
 onMounted(async () => {
     // eruda.init(); // KEEP FOR DEBUGGING MOBILE
     await loadLocationData();
@@ -320,6 +361,15 @@ onMounted(async () => {
 
             setupRouteLayer();
             initCameraListeners();
+
+            // Setup traffic layers
+            setupTrafficLayers(map.value);
+
+            // Start traffic polling if enabled
+            if (activeSettings.value.showTraffic) {
+                const game = settings.value.selectedGame || "ets2";
+                setEnabled(true, map.value, game);
+            }
         });
 
         map.value.on("click", async (e) => {
@@ -363,6 +413,7 @@ onMounted(async () => {
 onUnmounted(() => {
     stopTelemetry();
     destroyWorker();
+    stopPolling();
 
     if (routeTimer) clearTimeout(routeTimer);
     if (uiTimer) clearTimeout(uiTimer);

@@ -21,6 +21,8 @@ export interface GameProfile {
     lastDestination: [number, number] | null;
     hasTurnNavigation: boolean;
     fontFamily: string;
+    showTraffic: boolean;
+    trafficServerId: number;
 }
 
 export interface AppSettingsState {
@@ -46,6 +48,8 @@ const DEFAULT_PROFILE: GameProfile = {
     lastDestination: null,
     hasTurnNavigation: true,
     fontFamily: "Commissioner",
+    showTraffic: false,
+    trafficServerId: 2,
 };
 
 const DEFAULT_SETTINGS: AppSettingsState = {
@@ -63,6 +67,7 @@ const DEFAULT_SETTINGS: AppSettingsState = {
             themeColor: "#d32f2f",
             ownedDlcs: Array.from({ length: 16 }, (_, i) => i + 1),
             units: "imperial",
+            trafficServerId: 11,
         },
     },
     hudBtnSize: 30,
@@ -155,7 +160,20 @@ export const useSettings = () => {
         if (savedString) {
             try {
                 const parsed = JSON.parse(savedString);
-                settings.value = { ...DEFAULT_SETTINGS, ...parsed };
+                settings.value = {
+                    ...DEFAULT_SETTINGS,
+                    ...parsed,
+                    profiles: {
+                        ets2: {
+                            ...DEFAULT_SETTINGS.profiles.ets2,
+                            ...parsed?.profiles?.ets2,
+                        },
+                        ats: {
+                            ...DEFAULT_SETTINGS.profiles.ats,
+                            ...parsed?.profiles?.ats,
+                        },
+                    },
+                };
             } catch (e) {
                 console.error("Corrupt settings found, resetting to defaults.");
                 settings.value = { ...DEFAULT_SETTINGS };

@@ -489,6 +489,40 @@ export const useRouteController = (
         setMapLibreData(rawMap, "route-line", "LineString", toRaw(coords));
     }
 
+    function redrawRouteWithTraffic(colors: string[] | null) {
+        if (!map.value || !currentRoutePath.value) return;
+        const coords = toRaw(currentRoutePath.value);
+        const rawMap = toRaw(map.value);
+        
+        if (!colors || colors.length !== coords.length - 1) {
+            setMapLibreData(rawMap, "route-line", "LineString", coords);
+            return;
+        }
+
+        const features = [];
+        for (let i = 0; i < coords.length - 1; i++) {
+            const props: any = {};
+            if (colors[i]) props.color = colors[i];
+            
+            features.push({
+                type: "Feature",
+                geometry: {
+                    type: "LineString",
+                    coordinates: [coords[i], coords[i + 1]]
+                },
+                properties: props
+            });
+        }
+        
+        const source = rawMap.getSource("route-line") as maplibregl.GeoJSONSource;
+        if (source) {
+            source.setData({
+                type: "FeatureCollection",
+                features: features as any
+            });
+        }
+    }
+
     function addDestinationMarker(nodeId: number) {
         const endLocation = nodeCoords.get(nodeId);
         if (!endLocation || !map.value) return;
@@ -519,7 +553,7 @@ export const useRouteController = (
                 source: "route-line",
                 layout: { "line-join": "round", "line-cap": "round" },
                 paint: {
-                    "line-color": activeSettings.value.routeColor,
+                    "line-color": ["coalesce", ["get", "color"], activeSettings.value.routeColor],
                     "line-width": [
                         "interpolate",
                         ["linear"],
@@ -940,5 +974,6 @@ export const useRouteController = (
         findBestStartConfiguration,
         updateRouteProgress,
         clearRouteState,
+        redrawRouteWithTraffic,
     };
 };
