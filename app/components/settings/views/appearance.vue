@@ -2,9 +2,19 @@
 import { generateTruckIcon } from "~/assets/utils/map/markers";
 import SegmentedControl from "../segmentedControl.vue";
 
+import { useVoiceWarnings } from "~/composables/useVoiceWarnings";
+
 const { settings, activeSettings, updateProfile, DEFAULT_SETTINGS } =
     useSettings();
 const { t } = useTranslations();
+const { availableVoices, loadVoices } = useVoiceWarnings();
+
+const voiceOptions = computed(() => {
+    return availableVoices.value.map(v => ({
+        label: `${v.name} (${v.lang})`,
+        value: v.voiceURI
+    }));
+});
 
 const truckImgSrc = ref("");
 const isDriveInfoOpened = ref(false);
@@ -83,6 +93,22 @@ function toggleDriveInfoPanel() {
     isDriveInfoOpened.value = !isDriveInfoOpened.value;
 }
 
+function toggleAutoDayNight() {
+    updateProfile("autoDayNightTheme", !activeSettings.value.autoDayNightTheme);
+}
+
+function toggleVoiceWarnings() {
+    updateProfile("voiceWarnings", !activeSettings.value.voiceWarnings);
+    if (!activeSettings.value.voiceWarnings) {
+        // Just turned ON, try to load voices
+        loadVoices();
+    }
+}
+
+function updateVoiceLanguage(val: string) {
+    updateProfile("voiceLanguage", val);
+}
+
 watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
     immediate: true,
 });
@@ -153,21 +179,88 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
 
         <div class="small-separator"></div>
 
+        <Transition name="fade-collapse">
+            <div v-if="!activeSettings.autoDayNightTheme" class="option setting">
+                <div class="option-title">
+                    <Icon name="lucide:type-outline" size="24" />
+                    <p>{{ t("settings.textTheme") }}</p>
+                </div>
+
+                <SegmentedControl
+                    :left-option="t('settings.light')"
+                    :right-option="t('settings.dark')"
+                    :is-same-color="true"
+                    @connect="toggleTextColor"
+                    :active="isTextThemeLight"
+                    size="normal"
+                />
+            </div>
+            <div v-else class="option setting">
+                <div class="option-title">
+                    <Icon name="lucide:type-outline" size="24" />
+                    <p>{{ t("settings.textTheme") }} <span style="font-size: 1.2rem; color: #a1a1aa;">(Auto)</span></p>
+                </div>
+            </div>
+        </Transition>
+
         <div class="option setting">
             <div class="option-title">
-                <Icon name="lucide:type-outline" size="24" />
-                <p>{{ t("settings.textTheme") }}</p>
+                <Icon name="lucide:moon-star" size="24" />
+                <p>Auto Day/Night Theme</p>
             </div>
 
             <SegmentedControl
-                :left-option="t('settings.light')"
-                :right-option="t('settings.dark')"
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
                 :is-same-color="true"
-                @connect="toggleTextColor"
-                :active="isTextThemeLight"
+                @connect="toggleAutoDayNight"
+                :active="!activeSettings.autoDayNightTheme"
                 size="normal"
             />
         </div>
+
+        <div class="small-separator"></div>
+
+        <div class="option setting">
+            <div class="option-title">
+                <Icon name="lucide:volume-2" size="24" />
+                <p>Voice Warnings</p>
+            </div>
+
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="toggleVoiceWarnings"
+                :active="!activeSettings.voiceWarnings"
+                size="normal"
+            />
+        </div>
+
+        <Transition name="fade-collapse">
+            <div v-if="activeSettings.voiceWarnings" class="option setting" style="margin-top: 10px;">
+                <div class="option-title" style="margin-left: 30px;">
+                    <Icon name="lucide:languages" size="24" />
+                    <p>Voice Language</p>
+                </div>
+
+                <USelect
+                    :model-value="activeSettings.voiceLanguage"
+                    @update:model-value="(val: string) => updateVoiceLanguage(val)"
+                    :items="voiceOptions"
+                    variant="none"
+                    class="selector"
+                    value-attribute="value"
+                    option-attribute="label"
+                    :ui="{
+                        trailingIcon: 'shrink-0 size-[20px] text-white !px-6',
+                        content: 'bg-[#222e3c] shadow-xl rounded-md',
+                        item: 'flex items-center justify-between text-[1.6rem] font-BOLD !py-2 !px-3 text-[#f2f2f2] data-[highlighted]:bg-[#3d546e] rounded cursor-pointer transition-colors',
+                        itemTrailingIcon: 'text-white',
+                    }"
+                />
+            </div>
+        </Transition>
 
         <div class="option setting">
             <div class="option-title">

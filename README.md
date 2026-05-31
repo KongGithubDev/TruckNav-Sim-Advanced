@@ -18,6 +18,18 @@
     <img width="300" alt="image" src="https://github.com/user-attachments/assets/a977ea5f-af6f-49e2-adc4-78c8afef9879" />
 </div>
 
+## 🌟 New Google Maps Experience Features!
+
+We've recently overhauled the UI and added features to bring you a true Google Maps experience:
+- 🗣️ **Voice Warnings (Siri):** Audio alerts for overspeeding (customizable language).
+- 🌙 **Auto Day/Night Theme:** The map automatically switches to Dark Mode when it's night time in-game.
+- 🏎️ **3D Perspective Mode:** Tilt the camera and follow your truck seamlessly with a 3D view.
+- 🔍 **Floating Search Bar:** Quickly search for any city and jump straight to it.
+- 🚦 **Traffic Progress Bar:** A visual bar displaying traffic congestion colors along your entire route.
+- 🕒 **Traffic-Adjusted ETA:** Your ETA will automatically adjust and add delay time based on server traffic!
+- 🏙️ **Current Location HUD:** Always know which city/country you are currently driving through.
+- 🎨 **Glassmorphism UI:** Modern, translucent, and beautiful Material Design elements.
+
 # Current Status: Work in Progress / Demo
 
 Please consider this project a **Demo** or **Alpha**.

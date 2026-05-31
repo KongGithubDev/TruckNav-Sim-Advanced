@@ -52,9 +52,31 @@ let headingOffset = 0;
 let socket: WebSocket | null = null;
 
 export function useEtsTelemetry() {
-    const { settings } = useSettings();
+    const { settings, activeSettings, updateProfile } = useSettings();
 
     const isCapacitor = Capacitor.isNativePlatform();
+
+    watch(() => gameState.gameTime, (timeStr) => {
+        if (!timeStr || !activeSettings.value.autoDayNightTheme) return;
+        
+        const parts = timeStr.trim().split(' ');
+        const timePart = parts[parts.length - 1]; // e.g., "14:30"
+        if (!timePart) return;
+
+        const timeSplit = timePart.split(':');
+        if (timeSplit.length < 2) return;
+
+        const hour = parseInt(timeSplit[0], 10);
+        if (!isNaN(hour)) {
+            const shouldBeDark = hour >= 19 || hour < 6;
+            const targetTheme = shouldBeDark ? 'dark' : 'light';
+            
+            // Only update if it actually changed to avoid infinite save loops
+            if (activeSettings.value.textColor !== targetTheme) {
+                updateProfile('textColor', targetTheme);
+            }
+        }
+    });
 
     let speedSamples: number[] = [];
     const maxSamples = 120;

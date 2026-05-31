@@ -23,6 +23,9 @@ export interface GameProfile {
     fontFamily: string;
     showTraffic: boolean;
     trafficServerId: number;
+    autoDayNightTheme: boolean;
+    voiceWarnings: boolean;
+    voiceLanguage: string;
 }
 
 export interface AppSettingsState {
@@ -50,6 +53,9 @@ const DEFAULT_PROFILE: GameProfile = {
     fontFamily: "Commissioner",
     showTraffic: false,
     trafficServerId: 2,
+    autoDayNightTheme: true,
+    voiceWarnings: true,
+    voiceLanguage: "", // Will use system default if empty
 };
 
 const DEFAULT_SETTINGS: AppSettingsState = {

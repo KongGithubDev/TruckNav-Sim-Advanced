@@ -6,6 +6,8 @@ import { usePlatform } from "~/composables/Platform";
 import eruda from "eruda";
 import { blendWithBg, lightenColor } from "~/assets/utils/shared/colors";
 import { generateTruckIcon } from "~/assets/utils/map/markers";
+import type { CityData } from "~/composables/useCitySearch";
+import { convertEts2ToGeo, convertAtsToGeo } from "~/assets/utils/map/converters";
 
 defineProps<{ goHome: () => void }>();
 
@@ -82,6 +84,8 @@ const {
     updateMarkerSize,
     updateMarkerImage,
     toggleAutoFollow,
+    is3DMode,
+    toggle3DMode,
 } = useMapCamera(map);
 
 //
@@ -451,6 +455,22 @@ function onSheetClosed() {
     isSheetHidden.value = false;
 }
 
+function onCitySelect(city: CityData) {
+    if (!map.value) return;
+    
+    // Convert game coordinates to geographical coordinates
+    const isAts = settings.value.selectedGame === "ats";
+    const coords = isAts 
+        ? convertAtsToGeo(city.x, city.y) 
+        : convertEts2ToGeo(city.x, city.y);
+        
+    map.value.flyTo({
+        center: [coords[0], coords[1]],
+        zoom: 9,
+        duration: 1500,
+    });
+}
+
 function toggleEnableClicking() {
     isClickingEnabled.value = !isClickingEnabled.value;
 
@@ -510,6 +530,8 @@ const onCancelRoute = () => {
                         <LoadingScreen v-if="loading" :progress="progress" />
                     </Transition>
 
+                    <SearchBar @select="onCitySelect" />
+
                     <TopBar
                         v-show="settings.activeUiComponents.includes('topBar')"
                         :fuel="fuel"
@@ -520,6 +542,9 @@ const onCancelRoute = () => {
                         :truck-speed="truckSpeed"
                         :is-web="isWeb"
                     />
+
+                    <TrafficProgressBar />
+                    <CurrentLocation :truck-coords="truckCoords" />
 
                     <div class="left-buttons">
                         <HudButton :onClick="goHome">
@@ -594,6 +619,14 @@ const onCancelRoute = () => {
                                 class="icon"
                             />
                             <Icon v-else name="lucide:locate" class="icon" />
+                        </HudButton>
+
+                        <HudButton
+                            :is-active="is3DMode"
+                            :class="{ 'green-icon': is3DMode }"
+                            :onClick="toggle3DMode"
+                        >
+                            <Icon name="lucide:box" class="icon" />
                         </HudButton>
 
                         <HudButton

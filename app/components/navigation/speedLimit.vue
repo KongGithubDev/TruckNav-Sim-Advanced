@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useVoiceWarnings } from "~/composables/useVoiceWarnings";
+
 const props = defineProps<{
     truckSpeed: number;
     speedLimit: number;
@@ -9,6 +11,24 @@ const { settings } = useSettings();
 
 const truckSpeedConverted = computed(() => kmToUserUnits(props.truckSpeed));
 const speedLimitConverted = computed(() => kmToUserUnits(props.speedLimit));
+
+const { speakWarning } = useVoiceWarnings();
+const { t } = useTranslations();
+
+watch(
+    () => props.truckSpeed > props.speedLimit + 5 && props.speedLimit > 0,
+    (isSpeeding) => {
+        if (isSpeeding) {
+            // Speak a warning (with 15s cooldown)
+            // It will only speak if voiceWarnings setting is on
+            speakWarning(
+                'speeding',
+                t('warnings.speedLimitExceeded') || 'Warning, speed limit exceeded',
+                15
+            );
+        }
+    }
+);
 </script>
 
 <template>

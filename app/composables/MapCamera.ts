@@ -9,6 +9,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
     const isCameraLocked = ref(false);
     const isAutoFollowEnabled = ref(false);
     const isNavigating = ref(false);
+    const is3DMode = ref(false);
 
     let targetCoords: [number, number] | null = null;
     let targetHeading: number = 0;
@@ -86,9 +87,10 @@ export const useMapCamera = (map: Ref<Map | null>) => {
             if (isCameraLocked.value && !isEasing && !isTargetAtOrigin) {
                 map.value.jumpTo({
                     center: [currentTruckCoords[0], currentTruckCoords[1]],
-                    bearing: isAutoFollowEnabled.value
+                    bearing: is3DMode.value
                         ? currentTruckHeading
-                        : 0,
+                        : (isAutoFollowEnabled.value && isNavigating.value ? currentTruckHeading : 0),
+                    pitch: is3DMode.value ? 60 : 0,
                     padding: isNavigating.value ? PADDING_NAV : PADDING_FREE,
                 });
             }
@@ -167,8 +169,8 @@ export const useMapCamera = (map: Ref<Map | null>) => {
 
         map.value.easeTo({
             center: currentTruckCoords,
-            bearing: currentTruckHeading,
-            pitch: map.value.getPitch(),
+            bearing: is3DMode.value ? currentTruckHeading : (isNavigating.value ? currentTruckHeading : 0),
+            pitch: is3DMode.value ? 60 : 0,
             duration: 350,
             padding: isNavigating.value ? PADDING_NAV : PADDING_FREE,
         });
@@ -183,6 +185,15 @@ export const useMapCamera = (map: Ref<Map | null>) => {
             isCameraLocked.value = false;
             if (autoLockTimer) clearTimeout(autoLockTimer);
         }
+    };
+
+    const toggle3DMode = () => {
+        is3DMode.value = !is3DMode.value;
+        if (is3DMode.value) {
+            isAutoFollowEnabled.value = true;
+            isCameraLocked.value = true;
+        }
+        resumeCameraLock(isAutoFollowEnabled.value);
     };
 
     const followTruck = (coords: [number, number], heading: number) => {
@@ -230,9 +241,9 @@ export const useMapCamera = (map: Ref<Map | null>) => {
 
         map.value.easeTo({
             center: coords,
-            bearing: isNavigating.value ? heading : 0,
+            bearing: isNavigating.value || is3DMode.value ? heading : 0,
             zoom: 11,
-            pitch: map.value.getPitch(),
+            pitch: is3DMode.value ? 60 : 0,
             duration: 350,
             padding: PADDING_NAV,
         });
@@ -255,6 +266,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
         isCameraLocked,
         isNavigating,
         isAutoFollowEnabled,
+        is3DMode,
         initMarker,
         updateMarkerSize,
         updateMarkerImage,
@@ -263,6 +275,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
         stopNavigationMode,
         resumeCameraLock,
         toggleAutoFollow,
+        toggle3DMode,
         lockCamera,
         startNavigationMode,
     };

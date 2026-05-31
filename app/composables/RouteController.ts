@@ -6,6 +6,7 @@ import {
     DEVIATION_THRESHOLD_SQ,
     getSquaredDist,
 } from "~/assets/utils/map/maths";
+import { useTrafficData } from "~/composables/useTrafficData";
 import {
     deleteMapLibreData,
     setMapLibreData,
@@ -747,7 +748,16 @@ export const useRouteController = (
                 routeDistance.value = Math.round(totalKm);
                 const h = Math.floor(totalHours);
                 const m = Math.round((totalHours - h) * 60);
-                routeEta.value = `${h}h ${m}min`;
+                
+                // Add Traffic Delay initially if we already have it
+                const { routeTrafficInfo } = useTrafficData();
+                let trafficDelayStr = "";
+                if (routeTrafficInfo.value && routeTrafficInfo.value.congestedSegmentsCount > 0) {
+                    const delayMins = routeTrafficInfo.value.congestedSegmentsCount * 2; // e.g. 2 min per congested chunk
+                    trafficDelayStr = ` (+${delayMins}m traffic)`;
+                }
+                
+                routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
 
                 destinationName.value = getGameLocationName(
                     clickCoords[0],
@@ -860,7 +870,18 @@ export const useRouteController = (
         if (remHours > 0) {
             const h = Math.floor(remHours);
             const m = Math.round((remHours - h) * 60);
-            routeEta.value = `${h}h ${m}min`;
+            
+            // Add Traffic Delay
+            const { routeTrafficInfo } = useTrafficData();
+            let trafficDelayStr = "";
+            let extraClass = false;
+            
+            if (routeTrafficInfo.value && routeTrafficInfo.value.congestedSegmentsCount > 0) {
+                const delayMins = routeTrafficInfo.value.congestedSegmentsCount * 2;
+                trafficDelayStr = ` (+${delayMins}m traffic)`;
+            }
+            
+            routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
         } else {
             routeEta.value = "Arriving...";
         }
