@@ -18,6 +18,7 @@ const selectedExpansion = computed(() => {
 const languageItems = [
     { label: "English", value: "en" as LocaleCode },
     { label: "Deutsch", value: "de" as LocaleCode },
+    { label: "ภาษาไทย", value: "th" as LocaleCode },
 ];
 
 const currentLanguageLabel = computed(() => {
