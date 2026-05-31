@@ -58,44 +58,48 @@ const DEFAULT_PROFILE: GameProfile = {
     voiceLanguage: "", // Will use system default if empty
 };
 
-const DEFAULT_SETTINGS: AppSettingsState = {
-    selectedGame: null,
-    savedIP: null,
-    profiles: {
-        ets2: {
-            ...DEFAULT_PROFILE,
-            themeColor: "#fbc02d",
-            textColor: "dark",
-            units: "metric",
+function createDefaultSettings(): AppSettingsState {
+    return {
+        selectedGame: null,
+        savedIP: null,
+        profiles: {
+            ets2: {
+                ...DEFAULT_PROFILE,
+                themeColor: "#fbc02d",
+                textColor: "dark",
+                units: "metric",
+            },
+            ats: {
+                ...DEFAULT_PROFILE,
+                themeColor: "#d32f2f",
+                ownedDlcs: Array.from({ length: 16 }, (_, i) => i + 1),
+                units: "imperial",
+                trafficServerId: 11,
+            },
         },
-        ats: {
-            ...DEFAULT_PROFILE,
-            themeColor: "#d32f2f",
-            ownedDlcs: Array.from({ length: 16 }, (_, i) => i + 1),
-            units: "imperial",
-            trafficServerId: 11,
-        },
-    },
-    hudBtnSize: 30,
-    truckMarkerSize: 40,
-    compactTripFontSize: 1.8,
-    activeUiComponents: [
-        "speed",
-        "speedLimit",
-        "fuel",
-        "time",
-        "sleep",
-        "topBar",
-    ],
-    locale: "en",
-};
+        hudBtnSize: 30,
+        truckMarkerSize: 40,
+        compactTripFontSize: 1.3,
+        activeUiComponents: [
+            "speed",
+            "speedLimit",
+            "fuel",
+            "time",
+            "sleep",
+            "topBar",
+        ],
+        locale: "en",
+    };
+}
 
 const STORAGE_KEY = "truck-nav-settings";
 
+const DEFAULT_SETTINGS: AppSettingsState = createDefaultSettings();
+
 export const useSettings = () => {
-    const settings = useState<AppSettingsState>("app-settings", () => ({
-        ...DEFAULT_SETTINGS,
-    }));
+    const settings = useState<AppSettingsState>("app-settings", () =>
+        createDefaultSettings(),
+    );
 
     const activeSettings = computed(() => {
         const game = settings.value.selectedGame || "ets2";
@@ -166,26 +170,27 @@ export const useSettings = () => {
         if (savedString) {
             try {
                 const parsed = JSON.parse(savedString);
+                const defaults = createDefaultSettings();
                 settings.value = {
-                    ...DEFAULT_SETTINGS,
+                    ...defaults,
                     ...parsed,
                     profiles: {
                         ets2: {
-                            ...DEFAULT_SETTINGS.profiles.ets2,
+                            ...defaults.profiles.ets2,
                             ...parsed?.profiles?.ets2,
                         },
                         ats: {
-                            ...DEFAULT_SETTINGS.profiles.ats,
+                            ...defaults.profiles.ats,
                             ...parsed?.profiles?.ats,
                         },
                     },
                 };
             } catch (e) {
                 console.error("Corrupt settings found, resetting to defaults.");
-                settings.value = { ...DEFAULT_SETTINGS };
+                settings.value = createDefaultSettings();
             }
         } else {
-            settings.value = { ...DEFAULT_SETTINGS };
+            settings.value = createDefaultSettings();
         }
 
         applySideEffects();
@@ -196,20 +201,14 @@ export const useSettings = () => {
 
         const currentDest = settings.value.profiles[game].lastDestination;
 
-        const freshProfile = JSON.parse(
-            JSON.stringify(DEFAULT_SETTINGS.profiles[game]),
-        );
+        const defaults = createDefaultSettings();
+        const freshProfile = defaults.profiles[game];
         freshProfile.lastDestination = currentDest;
 
-        settings.value.hudBtnSize = DEFAULT_SETTINGS.hudBtnSize;
-        settings.value.truckMarkerSize = DEFAULT_SETTINGS.truckMarkerSize;
-        settings.value.compactTripFontSize =
-            DEFAULT_SETTINGS.compactTripFontSize;
-
-        settings.value.activeUiComponents = [
-            ...DEFAULT_SETTINGS.activeUiComponents,
-        ];
-
+        settings.value.hudBtnSize = defaults.hudBtnSize;
+        settings.value.truckMarkerSize = defaults.truckMarkerSize;
+        settings.value.compactTripFontSize = defaults.compactTripFontSize;
+        settings.value.activeUiComponents = [...defaults.activeUiComponents];
         settings.value.profiles[game] = freshProfile;
 
         saveSettings();

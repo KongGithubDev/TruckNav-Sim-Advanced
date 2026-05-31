@@ -111,6 +111,7 @@ export const calculateRoute = (
     startType: "road" | "yard" = "road",
     ownedDlcs: number[],
     targetLocation?: [number, number],
+    excludedEdges?: Set<number>,
 ): {
     path: [number, number][];
     nodeSequence: number[];
@@ -221,6 +222,10 @@ export const calculateRoute = (
             }
 
             let stepCost = edge.weight || 1;
+
+            if (excludedEdges?.has(neighborEdgeId)) {
+                stepCost += 5000;
+            }
 
             if (!edge.isFerry && ferryGraceCounter === 0) {
                 if (currentEdgeId === START_EDGE_ID && startHeading !== null) {
@@ -446,7 +451,7 @@ export function buildRouteStatsCache(
     let totalHours = 0;
 
     cache[0] = 0; // km
-    cache[1] = 0; // hours
+    cache[1] = 0; // real-world hours
 
     for (let i = 0; i < pathCoords.length - 1; i++) {
         const [x1, z1] = gamePoints[i]!;
@@ -467,7 +472,7 @@ export function buildRouteStatsCache(
         const segmentSpeed = multiplier === 3 ? speeds.city : speeds.highway;
 
         totalKm += segmentKm;
-        totalHours += segmentKm / segmentSpeed;
+        totalHours += segmentKm / segmentSpeed / multiplier;
 
         const idx = (i + 1) * 2;
         cache[idx] = totalKm;

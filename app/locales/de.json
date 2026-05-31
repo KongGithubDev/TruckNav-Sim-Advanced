@@ -67,7 +67,9 @@
     "notifications": {
         "locatingRoute": "Route wird gesucht",
         "noRouteAvailable": "Keine Route verfügbar",
-        "routeFound": "Route gefunden"
+        "routeFound": "Route gefunden",
+        "rerouting": "Neuberechnung...",
+        "reroutingSubtext": "Neuen Weg suchen"
     },
     "settings": {
         "appFont": "App Schriftart",

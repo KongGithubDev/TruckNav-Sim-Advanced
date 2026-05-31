@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useRouteController } from '~/composables/RouteController';
 
 const props = defineProps<{
     isFollowingTruck: boolean;

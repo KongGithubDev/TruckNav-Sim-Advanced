@@ -14,9 +14,6 @@ const displayLimit = computed(() => Math.round(props.speedLimit));
         <div class="floating-speed" :class="{ 'is-speeding': isSpeeding }">
             <div class="speed-value">{{ displaySpeed }}</div>
             <div class="speed-unit">km/h</div>
-            <div v-if="speedLimit > 0" class="speed-limit-badge" :class="{ 'limit-exceeded': isSpeeding }">
-                <span>{{ displayLimit }}</span>
-            </div>
         </div>
     </Transition>
 </template>

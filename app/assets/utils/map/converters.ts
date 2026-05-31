@@ -39,11 +39,21 @@ export function convertGeoToEts2(lng: number, lat: number): [number, number] {
     const projX = projected[0]!;
     const projY = projected[1]!;
 
-    let x = projX / (ETS2_MAP_FACTOR[1] * DEG_LEN);
-    let y = projY / (ETS2_MAP_FACTOR[0] * DEG_LEN);
+    const x = projX / (ETS2_MAP_FACTOR[1] * DEG_LEN);
+    const y = projY / (ETS2_MAP_FACTOR[0] * DEG_LEN);
 
     const gameX = x + ETS2_MAP_OFFSET[0];
     const gameY = y + ETS2_MAP_OFFSET[1];
+
+    // Inverse UK scale for coordinates in the UK region
+    const ukScale = 0.75;
+    const calaisBound = [-31100, -5500] as const;
+    if (gameX < -31100 && gameY < -5500) {
+        const ukInvScale = 1 / ukScale;
+        const adjX = x / ukScale - calaisBound[0] / 2;
+        const adjY = y / ukScale - calaisBound[1] / 2;
+        return [adjX + ETS2_MAP_OFFSET[0], adjY + ETS2_MAP_OFFSET[1]];
+    }
 
     return [gameX, gameY];
 }
@@ -72,8 +82,8 @@ export function convertGeoToAts(lng: number, lat: number): [number, number] {
     const projX = projected[0]!;
     const projY = projected[1]!;
 
-    let x = projX / (ETS2_MAP_FACTOR[1] * DEG_LEN);
-    let y = projY / (ETS2_MAP_FACTOR[0] * DEG_LEN);
+    const x = projX / (ATS_MAP_FACTOR[1] * DEG_LEN);
+    const y = projY / (ATS_MAP_FACTOR[0] * DEG_LEN);
 
     return [x, y];
 }

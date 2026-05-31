@@ -1,10 +1,14 @@
-const { settings } = useSettings();
+export async function loadGraph(game?: string) {
+    if (!game) return { graphBuffer: new ArrayBuffer(0), geometryBuffer: new ArrayBuffer(0) };
 
-export async function loadGraph() {
     const [graphRes, geometryRes] = await Promise.all([
-        fetch(`/data/${settings.value.selectedGame}/roadnetwork/graph.bin`),
-        fetch(`/data/${settings.value.selectedGame}/roadnetwork/geometry.bin`),
+        fetch(`/data/${game}/roadnetwork/graph.bin`),
+        fetch(`/data/${game}/roadnetwork/geometry.bin`),
     ]);
+
+    if (!graphRes.ok || !geometryRes.ok) {
+        throw new Error(`Failed to load graph data for ${game}`);
+    }
 
     return {
         graphBuffer: await graphRes.arrayBuffer(),

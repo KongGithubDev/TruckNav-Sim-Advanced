@@ -58,21 +58,25 @@ self.onmessage = async (e: MessageEvent) => {
     }
 
     if (type === "CALC_ROUTE") {
-        if (!adjacency || !nodeCoords || !geometryF32) return;
+        try {
+            if (!adjacency || !nodeCoords || !geometryF32) {
+                self.postMessage({ type: "RESULT", payload: null });
+                return;
+            }
 
-        const {
-            startId,
-            possibleEnds,
-            heading,
-            startType,
-            targetCoords,
-            ownedDlcs,
-            selectedGame,
-            sdkScale,
-            avgSpeed,
-        } = payload;
+            const {
+                startId,
+                possibleEnds,
+                heading,
+                startType,
+                targetCoords,
+                ownedDlcs,
+                selectedGame,
+                sdkScale,
+                avgSpeed,
+            } = payload;
 
-        const result = calculateRoute(
+            const mainResult = calculateRoute(
             startId,
             new Set(possibleEnds),
             heading,
@@ -83,7 +87,35 @@ self.onmessage = async (e: MessageEvent) => {
             targetCoords,
         );
 
-        if (result && result.path && result.nodeSequence) {
+        let alternativeResult: Awaited<ReturnType<typeof calculateRoute>> | null = null;
+
+        if (mainResult && mainResult.nodeSequence) {
+            const mainRouteEdgeIds = new Set<number>();
+            for (let i = 0; i < mainResult.nodeSequence.length - 1; i++) {
+                const u = mainResult.nodeSequence[i]!;
+                const v = mainResult.nodeSequence[i + 1]!;
+                const edge = adjacency.get(u)?.find((e) => e.to === v);
+                if (edge && edge.edgeId) {
+                    mainRouteEdgeIds.add(edge.edgeId);
+                }
+            }
+
+            alternativeResult = calculateRoute(
+                startId,
+                new Set(possibleEnds),
+                heading,
+                adjacency,
+                nodeCoords,
+                startType,
+                ownedDlcs,
+                targetCoords,
+                mainRouteEdgeIds,
+            );
+        }
+
+        const processRoute = (result: any) => {
+            if (!result || !result.path || !result.nodeSequence || !adjacency || !nodeCoords || !geometryF32) return null;
+
             let fullPath = [...result.path];
             let rawDisplayPath: [number, number][] = [];
 
@@ -207,27 +239,53 @@ self.onmessage = async (e: MessageEvent) => {
                 sequenceExits[i] = extNum;
             }
 
+            return {
+                ...result,
+                rawPath: finalSmoothedPath,
+                displayPath: finalSmoothedPath,
+                stats: finalStatsCache,
+                nodeKms: nodeKms,
+                sequenceManeuvers: sequenceManeuvers,
+                sequenceExits: sequenceExits,
+            };
+        };
+
+        const mainProcessed = processRoute(mainResult);
+        const altProcessed = processRoute(alternativeResult);
+
+        if (mainProcessed) {
+            // @ts-ignore
+            const transferable = [
+                mainProcessed.stats.buffer,
+                mainProcessed.nodeKms.buffer,
+                mainProcessed.sequenceManeuvers.buffer,
+                mainProcessed.sequenceExits.buffer,
+            ];
+            if (altProcessed) {
+                // @ts-ignore
+                transferable.push(
+                    altProcessed.stats.buffer,
+                    altProcessed.nodeKms.buffer,
+                    altProcessed.sequenceManeuvers.buffer,
+                    altProcessed.sequenceExits.buffer,
+                );
+            }
+
             self.postMessage(
                 {
                     type: "RESULT",
                     payload: {
-                        ...result,
-                        rawPath: finalSmoothedPath,
-                        displayPath: finalSmoothedPath,
-                        stats: finalStatsCache,
-                        nodeKms: nodeKms,
-                        sequenceManeuvers: sequenceManeuvers,
-                        sequenceExits: sequenceExits,
+                        main: mainProcessed,
+                        alternative: altProcessed,
                     },
                 },
-                [
-                    finalStatsCache.buffer,
-                    nodeKms.buffer,
-                    sequenceManeuvers.buffer,
-                    sequenceExits.buffer,
-                ],
+                transferable,
             );
         } else {
+            self.postMessage({ type: "RESULT", payload: null });
+        }
+        } catch (error) {
+            console.error("[route.worker] Route calculation failed:", error);
             self.postMessage({ type: "RESULT", payload: null });
         }
     }

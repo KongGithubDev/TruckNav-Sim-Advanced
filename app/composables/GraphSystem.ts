@@ -1,6 +1,7 @@
 import RBush from "rbush";
 import { loadGraph } from "~/assets/utils/routing/clientGraph";
 import { haversine } from "~/assets/utils/routing/helpers";
+import { useSettings } from "~/composables/Settings";
 
 interface NodeIndexItem {
     minX: number;
@@ -59,7 +60,9 @@ export function useGraphSystem() {
         }, 200);
 
         try {
-            const { graphBuffer, geometryBuffer } = await loadGraph();
+            const { settings } = useSettings();
+            const game = settings.value.selectedGame || "ets2";
+            const { graphBuffer, geometryBuffer } = await loadGraph(game);
 
             workerGraphBuffer = graphBuffer;
             workerGeometryBuffer = geometryBuffer;

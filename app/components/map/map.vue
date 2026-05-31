@@ -3,11 +3,11 @@ import { ref, onMounted, shallowRef, Transition } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 import maplibregl from "maplibre-gl";
 import { usePlatform } from "~/composables/Platform";
-import eruda from "eruda";
 import { blendWithBg, lightenColor } from "~/assets/utils/shared/colors";
 import { generateTruckIcon } from "~/assets/utils/map/markers";
 import type { CityData } from "~/composables/useCitySearch";
 import { convertEts2ToGeo, convertAtsToGeo } from "~/assets/utils/map/converters";
+import { cleanupMapLibre } from "~/composables/MapLibre";
 
 defineProps<{ goHome: () => void }>();
 
@@ -103,6 +103,7 @@ const {
     routeEta,
     arrivalTime,
     isCalculating: isCalculatingRoute,
+    isRerouting: isReroutingRoute,
     isWorkerReady,
     initWorkerData,
     destroyWorker,
@@ -249,11 +250,14 @@ watch(
                     false,
                     averageSpeed.value,
                 );
+
+                isClickingEnabled.value = true;
             }
         } else if (!hasJob && currentJobKey.value !== "") {
             clearRouteState();
             stopNavigationMode();
             currentJobKey.value = "";
+            isClickingEnabled.value = true;
         }
     },
 );
@@ -458,7 +462,7 @@ onMounted(async () => {
             ); // KEEP FOR DEBUGGING BUGGED AREAS
             if (!isClickingEnabled.value) return;
             if (!gameConnected.value) return;
-            if (!truckCoords.value) return;
+            if (!truckCoords.value || (truckCoords.value[0] === 0 && truckCoords.value[1] === 0)) return;
 
             const currentScale =
                 scale.value > 0
@@ -489,6 +493,7 @@ onUnmounted(() => {
     stopTelemetry();
     destroyWorker();
     stopPolling();
+    cleanupMapLibre();
 
     if (routeTimer) clearTimeout(routeTimer);
     if (uiTimer) clearTimeout(uiTimer);
@@ -612,6 +617,7 @@ const toggleSettingsPanel = () => {
 const onCancelRoute = () => {
     clearRouteState();
     stopNavigationMode();
+    isClickingEnabled.value = true;
 };
 </script>
 
@@ -630,7 +636,7 @@ const onCancelRoute = () => {
                         <LoadingScreen v-if="loading" :progress="progress" />
                     </Transition>
                     
-                    <RerouteToast :is-calculating="isCalculatingRoute" />
+                    <RerouteToast :is-calculating="isCalculatingRoute" :is-rerouting="isReroutingRoute" />
 
                     <SearchBar @select="onCitySelect" />
 

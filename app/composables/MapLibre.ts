@@ -2,6 +2,15 @@ import type { Map as MapLibreGl, StyleSpecification } from "maplibre-gl";
 import { blendWithBg, lightenColor } from "~/assets/utils/shared/colors";
 import { BlobSource } from "~/assets/utils/shared/BlobSource";
 
+let mapCleanup: (() => void) | null = null;
+
+export function cleanupMapLibre() {
+    if (mapCleanup) {
+        mapCleanup();
+        mapCleanup = null;
+    }
+}
+
 export async function initializeMap(
     container: HTMLElement,
 ): Promise<MapLibreGl> {
@@ -14,6 +23,9 @@ export async function initializeMap(
 
     const protocol = new Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
+    mapCleanup = () => {
+        maplibregl.removeProtocol("pmtiles");
+    };
 
     async function loadPmtiles(fileName: string, key: string) {
         const url = `${window.location.origin}/data/${settings.value.selectedGame}/map-data/tiles/${fileName}.mp3`;

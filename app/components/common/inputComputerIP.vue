@@ -34,7 +34,10 @@ const canConnect = computed(() => {
     return true;
 });
 
+let connectingPromise: Promise<void> | null = null;
+
 const handleConnect = async () => {
+    if (connectingPromise) return;
     connectionError.value = t("common.disconnected");
 
     if (!ipInput.value) {
@@ -43,7 +46,12 @@ const handleConnect = async () => {
     }
 
     isConnecting.value = true;
+    connectingPromise = doConnect();
+    await connectingPromise;
+    connectingPromise = null;
+};
 
+const doConnect = async () => {
     try {
         if (!(await isBridgeRunning(ipInput.value)))
             throw new Error(t("input.bridgeNotReachable"));

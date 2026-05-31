@@ -1,26 +1,31 @@
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useCitySearch } from '~/composables/useCitySearch';
 import type { CityData } from '~/composables/useCitySearch';
+import { convertGeoToEts2, convertGeoToAts } from '~/assets/utils/map/converters';
+import { useSettings } from '~/composables/Settings';
 
 const props = defineProps<{
     truckCoords: [number, number] | null;
 }>();
 
 const { getClosestCity, loadCities, isLoaded } = useCitySearch();
+const { settings } = useSettings();
 const currentCity = ref<CityData | null>(null);
 
 onMounted(() => {
     loadCities();
 });
 
-// Update every few seconds or when coords change significantly to avoid too much calculation
 watch(() => props.truckCoords, (coords) => {
     if (!isLoaded.value || !coords) return;
-    
-    // Simple throttle: only recalculate if we haven't done it this frame or similar,
-    // but Vue's reactivity might trigger often. We'll rely on it for now.
-    const city = getClosestCity(coords[0], coords[1]);
+    if (coords[0] === 0 && coords[1] === 0) return;
+
+    const gameCoords = settings.value.selectedGame === "ats"
+        ? convertGeoToAts(coords[0], coords[1])
+        : convertGeoToEts2(coords[0], coords[1]);
+
+    const city = getClosestCity(gameCoords[0], gameCoords[1]);
     if (city) {
         currentCity.value = city;
     }

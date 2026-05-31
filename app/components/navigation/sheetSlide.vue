@@ -75,6 +75,10 @@ watch(
         if (navigating) cancelAutoStart();
     },
 );
+
+onUnmounted(() => {
+    cancelAutoStart();
+});
 </script>
 
 <template>

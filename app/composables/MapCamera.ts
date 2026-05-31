@@ -1,5 +1,4 @@
 import { ref, onUnmounted } from "vue";
-import type { Ref } from "vue";
 import type { Map } from "maplibre-gl";
 
 const PADDING_NAV = { top: 180, bottom: 0, left: 0, right: 0 };
@@ -31,6 +30,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
     let autoLockTimer: ReturnType<typeof setTimeout> | null = null;
 
     let markerEl: HTMLDivElement | null = null;
+    let registeredListeners: Array<{ event: string; handler: (e: any) => void }> = [];
 
     const initMarker = (imgSrc: string, size: number) => {
         if (!map.value) return;
@@ -109,7 +109,11 @@ export const useMapCamera = (map: Ref<Map | null>) => {
             }
         }
 
-        animationFrameId = requestAnimationFrame(renderLoop);
+        if (map.value) {
+            animationFrameId = requestAnimationFrame(renderLoop);
+        } else {
+            animationFrameId = null;
+        }
     };
 
     const startRenderLoop = () => {
@@ -132,7 +136,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
         const breakLockEvents = ["mousedown", "touchstart", "wheel"];
 
         breakLockEvents.forEach((event) => {
-            map.value!.on(event, (e) => {
+            const handler = (e: any) => {
                 if (e.originalEvent && !isEasing) {
                     isCameraLocked.value = false;
                     if (autoLockTimer) clearTimeout(autoLockTimer);
@@ -143,10 +147,12 @@ export const useMapCamera = (map: Ref<Map | null>) => {
                         }, 1500);
                     }
                 }
-            });
+            };
+            map.value!.on(event, handler);
+            registeredListeners.push({ event, handler });
         });
 
-        map.value.on("move", (e) => {
+        const moveHandler = (e: any) => {
             if (e.originalEvent && !isCameraLocked.value && !isEasing) {
                 if (autoLockTimer) clearTimeout(autoLockTimer);
 
@@ -156,7 +162,9 @@ export const useMapCamera = (map: Ref<Map | null>) => {
                     }, 1500);
                 }
             }
-        });
+        };
+        map.value.on("move", moveHandler);
+        registeredListeners.push({ event: "move", handler: moveHandler });
     };
 
     const resumeCameraLock = (isFollowButtonEnabled?: boolean) => {
@@ -290,8 +298,12 @@ export const useMapCamera = (map: Ref<Map | null>) => {
 
     onUnmounted(() => {
         stopRenderLoop();
-        if (easeTimeout) clearTimeout(easeTimeout);
-        if (markerEl) markerEl.remove();
+        if (map.value) {
+            for (const { event, handler } of registeredListeners) {
+                map.value.off(event, handler);
+            }
+            registeredListeners = [];
+        }
     });
 
     return {

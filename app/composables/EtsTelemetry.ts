@@ -50,6 +50,7 @@ let lastPosition: [number, number] | null = null;
 let headingOffset = 0;
 
 let socket: WebSocket | null = null;
+let stoppedByUser = false;
 
 export function useEtsTelemetry() {
     const { settings, activeSettings, updateProfile } = useSettings();
@@ -83,6 +84,7 @@ export function useEtsTelemetry() {
 
     function startTelemetry(onUpdate?: (data: TelemetryUpdate) => void) {
         if (socket) return;
+        stoppedByUser = false;
 
         const ip = isCapacitor
             ? settings.value.savedIP
@@ -117,11 +119,14 @@ export function useEtsTelemetry() {
         socket.onclose = () => {
             socket = null;
             resetDataOnDisconnected(onUpdate);
-            setTimeout(() => startTelemetry(onUpdate), 3000);
+            if (!stoppedByUser) {
+                setTimeout(() => startTelemetry(onUpdate), 3000);
+            }
         };
     }
 
     function stopTelemetry() {
+        stoppedByUser = true;
         if (socket) {
             socket.close();
             socket = null;

@@ -53,6 +53,7 @@ export const useRouteController = (
     const lastMathPos = ref<[number, number] | null>(null);
 
     const isCalculating = ref(false);
+    const isRerouting = ref(false);
     const routeFound = ref<boolean | null>(null);
 
     const currentRouteIndex = ref(0);
@@ -123,7 +124,10 @@ export const useRouteController = (
         );
 
         worker.onmessage = (e) => {
-            if (e.data.type === "READY") console.log("Web Worker Ready.");
+            if (e.data.type === "READY") {
+                console.log("Web Worker Ready.");
+                isWorkerReady.value = true;
+            }
         };
     }
 
@@ -152,7 +156,6 @@ export const useRouteController = (
             },
         });
 
-        isWorkerReady.value = true;
     }
 
     function projectPointToSegment(
@@ -482,7 +485,9 @@ export const useRouteController = (
                 avgSpeed,
             );
 
-            if (result) {
+            // Worker returns { main, alternative } - check that main route exists
+            const mainRoute = result?.main ?? result;
+            if (mainRoute && mainRoute.displayPath) {
                 return result;
             }
         }
@@ -531,11 +536,9 @@ export const useRouteController = (
         }
     }
 
-    function addDestinationMarker(nodeId: number) {
-        const endLocation = nodeCoords.get(nodeId);
-        if (!endLocation || !map.value) return;
-
-        setMapLibreData(map.value, "destination-source", "Point", endLocation);
+    function addDestinationMarker(coords: [number, number]) {
+        if (!map.value) return;
+        setMapLibreData(map.value, "destination-source", "Point", coords);
     }
 
     async function setupRouteLayer() {
@@ -757,7 +760,7 @@ export const useRouteController = (
         createEndMarker: boolean,
         avgSpeed: number,
     ) {
-        if (adjacency.size === 0 || isCalculating.value || !isWorkerReady)
+        if (adjacency.size === 0 || isCalculating.value || !isWorkerReady.value)
             return;
 
         isCalculating.value = true;
@@ -772,7 +775,10 @@ export const useRouteController = (
                 50,
             );
 
-            if (!startConfig) return;
+            if (!startConfig) {
+                routeFound.value = false;
+                return;
+            }
             isYardStart.value = startConfig.type === "yard";
 
             startNodeId.value = startConfig.toId;
@@ -786,44 +792,47 @@ export const useRouteController = (
                 avgSpeed,
             );
 
-            if (result) {
+            // Worker returns { main, alternative } - extract main route
+            const mainResult = result?.main ?? result;
+
+            if (mainResult) {
                 isRouteActive.value = true;
 
-                endNodeId.value = result.endId;
+                endNodeId.value = mainResult.endId;
 
-                const frozenRawPath = Object.freeze(result.displayPath);
+                const frozenRawPath = Object.freeze(mainResult.displayPath);
                 currentRoutePath.value = frozenRawPath as any;
 
-                routeStatsCache.value = result.stats;
+                routeStatsCache.value = mainResult.stats;
 
-                const cache = result.stats;
-                const lastIdx = (result.rawPath.length - 1) * 2;
+                const cache = mainResult.stats;
+                const lastIdx = (mainResult.rawPath.length - 1) * 2;
                 const totalKm = cache[lastIdx]!;
-                const totalHours = cache[lastIdx + 1]!;
+                const totalRealHours = cache[lastIdx + 1]!;
 
-                drawRouteOnMap(result.displayPath);
-                if (createEndMarker) addDestinationMarker(result.endId);
+                drawRouteOnMap(mainResult.displayPath);
+                if (createEndMarker) addDestinationMarker(clickCoords);
 
                 routeDistance.value = Math.round(totalKm);
-                // Add Traffic Delay
+                // Add Traffic Delay (convert in-game delay to real-world using current scale)
                 const { routeTrafficInfo } = useTrafficData();
-                const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60); // 5 in-game minutes per congested chunk
-                const finalInGameHours = totalHours + trafficDelayInGameHours;
+                const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60);
+                const trafficDelayRealHours = trafficDelayInGameHours / sdkScale;
+                const finalRealHours = totalRealHours + trafficDelayRealHours;
 
-                const h = Math.floor(finalInGameHours);
-                const m = Math.round((finalInGameHours - h) * 60);
+                const h = Math.floor(finalRealHours);
+                const m = Math.round((finalRealHours - h) * 60);
                 
                 let trafficDelayStr = "";
-                if (trafficDelayInGameHours > 0) {
-                    trafficDelayStr = ` (+${Math.round(trafficDelayInGameHours * 60)}m traffic)`;
+                if (trafficDelayRealHours > 0) {
+                    trafficDelayStr = ` (+${Math.round(trafficDelayRealHours * 60)}m traffic)`;
                 }
                 
                 routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
 
                 // Compute real-world arrival clock time
-                const realWorldHours = finalInGameHours / sdkScale;
                 const now = new Date();
-                const arrivalDate = new Date(now.getTime() + realWorldHours * 3600000);
+                const arrivalDate = new Date(now.getTime() + finalRealHours * 3600000);
                 arrivalTime.value = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 destinationName.value = getGameLocationName(
@@ -832,10 +841,10 @@ export const useRouteController = (
                 );
 
                 fullRouteDirections.value = generateDirectionsList(
-                    result.nodeSequence,
-                    result.nodeKms,
-                    result.sequenceManeuvers,
-                    result.sequenceExits,
+                    mainResult.nodeSequence,
+                    mainResult.nodeKms,
+                    mainResult.sequenceManeuvers,
+                    mainResult.sequenceExits,
                     nodeCoords,
                 );
 
@@ -855,7 +864,7 @@ export const useRouteController = (
                 if (activeSettings.value.hasTurnNavigation) {
                     drawTurnArrows(
                         fullRouteDirections.value,
-                        result.displayPath,
+                        mainResult.displayPath,
                     );
                 }
 
@@ -863,35 +872,32 @@ export const useRouteController = (
                 currentRouteIndex.value = 0;
                 updateProfile("lastDestination", savedDestination.value);
 
-                // Compute alternative route in the background (different avgSpeed bias)
+                // Use the alternative route already computed by the worker (edge-exclusion method)
                 altRoutePath.value = null;
                 altRouteEta.value = "";
                 altRouteDistance.value = 0;
-                const altResult = await findFlexibleRoute(
-                    startNodeId.value!,
-                    toRaw(clickCoords),
-                    truckHeading,
-                    startConfig.type as "road" | "yard",
-                    startConfig.projectedCoords,
-                    sdkScale,
-                    avgSpeed * 0.75, // bias toward slower/smaller roads
-                );
-                if (altResult && altResult.displayPath) {
-                    // Only show alt if it meaningfully differs from primary
-                    const altLastIdx = (altResult.rawPath.length - 1) * 2;
-                    const altKm = altResult.stats[altLastIdx];
+
+                const altData = result?.alternative;
+                if (altData && altData.displayPath && altData.stats) {
+                    const altLastIdx = (altData.rawPath.length - 1) * 2;
+                    const altKm: number = altData.stats[altLastIdx] ?? 0;
+                    const altRealHours: number = altData.stats[altLastIdx + 1] ?? 0;
                     const primaryKm = routeDistance.value;
-                    const altH = altResult.stats[altLastIdx];
-                    if (Math.abs(altKm - primaryKm) > 5) { // at least 5km different
-                        altRoutePath.value = altResult.displayPath;
-                        const altHours = altResult.stats[altLastIdx + 1] || 0;
-                        const aH = Math.floor(altHours);
-                        const aM = Math.round((altHours - aH) * 60);
-                        altRouteEta.value = `${aH}h ${aM}min`;
+
+                    // Only show alt route if it meaningfully differs (>5km or >10% different)
+                    const kmDiff = Math.abs(altKm - primaryKm);
+                    const pctDiff = primaryKm > 0 ? kmDiff / primaryKm : 0;
+
+                    if (kmDiff > 5 || pctDiff > 0.1) {
+                        altRoutePath.value = altData.displayPath;
                         altRouteDistance.value = Math.round(altKm);
-                        // Draw alt route
+
+                        const aH = Math.floor(altRealHours);
+                        const aM = Math.round((altRealHours - aH) * 60);
+                        altRouteEta.value = `${aH}h ${aM}min`;
+
                         if (map.value) {
-                            setMapLibreData(map.value, "alt-route-line", "LineString", altResult.displayPath);
+                            setMapLibreData(map.value, "alt-route-line", "LineString", altData.displayPath);
                         }
                     }
                 }
@@ -958,42 +964,43 @@ export const useRouteController = (
         const currentIdx = bestIndex * 2;
 
         const totalKm = cache[lastIdx]!;
-        const totalHours = cache[lastIdx + 1]!;
+        const totalRealHours = cache[lastIdx + 1]!;
 
         const currentKm = cache[currentIdx]!;
-        const currentHours = cache[currentIdx + 1]!;
+        const currentRealHours = cache[currentIdx + 1]!;
 
         const remKm = totalKm - currentKm;
-        const remHours = totalHours - currentHours;
+        const remRealHours = totalRealHours - currentRealHours;
         routeDistance.value = Math.round(remKm);
 
-        if (remHours > 0 || remKm > 0) {
-            // Dynamic ETA based on current truck speed
-            const currentSpeed = avgSpeed > 10 ? avgSpeed : 60; // Assume 60km/h if stopped or very slow
+        if (remRealHours > 0 || remKm > 0) {
+            // Dynamic ETA based on current truck speed (in-game → real-world via sdkScale)
+            const currentSpeed = avgSpeed > 10 ? avgSpeed : 60;
             const dynamicInGameHours = remKm / currentSpeed;
+            const dynamicRealHours = dynamicInGameHours / sdkScale;
 
-            // Blend the original ETA (based on speed limits) with dynamic ETA
-            const blendedHours = (dynamicInGameHours + remHours) / 2;
+            // Blend the original ETA (real-world from cache) with dynamic real-world ETA
+            const blendedHours = (dynamicRealHours + remRealHours) / 2;
 
-            // Add Traffic Delay
+            // Add Traffic Delay (convert in-game to real-world)
             const { routeTrafficInfo } = useTrafficData();
             const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60);
-            const finalInGameHours = blendedHours + trafficDelayInGameHours;
+            const trafficDelayRealHours = trafficDelayInGameHours / sdkScale;
+            const finalRealHours = blendedHours + trafficDelayRealHours;
             
-            const h = Math.floor(finalInGameHours);
-            const m = Math.round((finalInGameHours - h) * 60);
+            const h = Math.floor(finalRealHours);
+            const m = Math.round((finalRealHours - h) * 60);
             
             let trafficDelayStr = "";
-            if (trafficDelayInGameHours > 0) {
-                trafficDelayStr = ` (+${Math.round(trafficDelayInGameHours * 60)}m traffic)`;
+            if (trafficDelayRealHours > 0) {
+                trafficDelayStr = ` (+${Math.round(trafficDelayRealHours * 60)}m traffic)`;
             }
             
             routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
 
             // Real-world arrival time
-            const realWorldHours = finalInGameHours / sdkScale;
             const now = new Date();
-            const arrivalDate = new Date(now.getTime() + realWorldHours * 3600000);
+            const arrivalDate = new Date(now.getTime() + finalRealHours * 3600000);
             arrivalTime.value = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         } else {
             routeEta.value = "Arriving...";
@@ -1069,6 +1076,7 @@ export const useRouteController = (
             if (!isCalculating.value && savedDestination.value) {
                 lastRecalcTime.value = now;
                 console.log("Deviation detected! Recalculating...");
+                isRerouting.value = true;
                 handleRouteClick(
                     toRaw(savedDestination.value),
                     truckCoords,
@@ -1076,7 +1084,9 @@ export const useRouteController = (
                     sdkScale,
                     false,
                     avgSpeed,
-                );
+                ).finally(() => {
+                    isRerouting.value = false;
+                });
                 return;
             }
         }
@@ -1130,24 +1140,25 @@ export const useRouteController = (
             routeEta,
             arrivalTime,
             isCalculating,
+            isRerouting,
             routeFound,
             currentRoutePath,
             altRoutePath,
             altRouteEta,
             altRouteDistance,
             hasAltRoute,
-        isWorkerReady,
-        isRouteActive,
-        fullRouteDirections,
-        nextTurnDistance,
-        initWorkerData,
-        destroyWorker,
-        setupRouteLayer,
-        handleRouteClick,
-        findBestStartConfiguration,
-        updateRouteProgress,
-        clearRouteState,
-        redrawRouteWithTraffic,
-        swapToAltRoute,
-    };
+            isWorkerReady,
+            isRouteActive,
+            fullRouteDirections,
+            nextTurnDistance,
+            initWorkerData,
+            destroyWorker,
+            setupRouteLayer,
+            handleRouteClick,
+            findBestStartConfiguration,
+            updateRouteProgress,
+            clearRouteState,
+            redrawRouteWithTraffic,
+            swapToAltRoute,
+        };
 };
