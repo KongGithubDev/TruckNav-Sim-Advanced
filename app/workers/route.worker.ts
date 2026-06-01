@@ -77,17 +77,17 @@ self.onmessage = async (e: MessageEvent) => {
             } = payload;
 
             const mainResult = calculateRoute(
-            startId,
-            new Set(possibleEnds),
-            heading,
-            adjacency,
-            nodeCoords,
-            startType,
-            ownedDlcs,
-            targetCoords,
-        );
+                startId,
+                new Set(possibleEnds),
+                heading,
+                adjacency,
+                nodeCoords,
+                startType,
+                ownedDlcs,
+                targetCoords,
+            );
 
-        let alternativeResult: Awaited<ReturnType<typeof calculateRoute>> | null = null;
+            let alternativeResult: Awaited<ReturnType<typeof calculateRoute>> | null = null;
 
         if (mainResult && mainResult.nodeSequence) {
             const mainRouteEdgeIds = new Set<number>();
@@ -149,6 +149,16 @@ self.onmessage = async (e: MessageEvent) => {
             }
             nodeIndices[result.nodeSequence.length - 1] = rawDisplayPath.length;
             rawDisplayPath.push(fullPath[fullPath.length - 1]!);
+
+            // Extend path to the exact destination coordinates
+            if (targetCoords) {
+                const last = rawDisplayPath[rawDisplayPath.length - 1];
+                const dx = last[0] - targetCoords[0];
+                const dy = last[1] - targetCoords[1];
+                if (dx * dx + dy * dy > 1e-12) {
+                    rawDisplayPath.push(targetCoords);
+                }
+            }
 
             const simplified = simplifyPath(rawDisplayPath, 0.00003);
             const finalSmoothedPath = smoothPath(simplified, 4);
