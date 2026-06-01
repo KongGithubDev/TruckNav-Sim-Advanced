@@ -15,6 +15,10 @@ import {
     generateDirectionsList,
     type DirectionStep,
 } from "~/assets/utils/routing/directions";
+import {
+    convertGeoToEts2,
+    convertGeoToAts,
+} from "~/assets/utils/map/converters";
 
 export const useRouteController = (
     map: Ref<maplibregl.Map | null>,
@@ -39,6 +43,7 @@ export const useRouteController = (
     const altRoutePath = shallowRef<[number, number][] | null>(null);
     const altRouteEta = ref<string>("");
     const altRouteDistance = ref<number>(0);
+    const altRouteStats = ref<Float32Array | null>(null);
     const hasAltRoute = computed(() => altRoutePath.value !== null);
 
     const savedDestination = ref<[number, number] | null>(null);
@@ -793,9 +798,40 @@ export const useRouteController = (
             );
 
             // Worker returns { main, alternative } - extract main route
-            const mainResult = result?.main ?? result;
+            let mainResult = result?.main ?? result;
 
             if (mainResult) {
+                // Extend display path to reach the exact click coordinates
+                const routePath = mainResult.displayPath;
+                const lastPt = routePath[routePath.length - 1];
+                const distToClick = Math.sqrt(
+                    Math.pow(lastPt[0] - clickCoords[0], 2) +
+                    Math.pow(lastPt[1] - clickCoords[1], 2),
+                );
+
+                if (distToClick > 0.00001) {
+                    const isAts = settings.value.selectedGame === "ats";
+                    const toGame = isAts ? convertGeoToAts : convertGeoToEts2;
+                    const [lx, lz] = toGame(lastPt[0], lastPt[1]);
+                    const [cx, cz] = toGame(clickCoords[0], clickCoords[1]);
+                    const gameDx = cx - lx;
+                    const gameDz = cz - lz;
+                    const rawLen = Math.sqrt(gameDx * gameDx + gameDz * gameDz);
+                    const segKm = rawLen / 1000;
+                    const segHours = segKm / (avgSpeed > 10 ? avgSpeed : 80);
+
+                    const extendedPath: [number, number][] = [...routePath, clickCoords];
+                    mainResult.displayPath = extendedPath;
+                    mainResult.rawPath = extendedPath;
+
+                    const oldStats = mainResult.stats;
+                    const newStats = new Float32Array(oldStats.length + 2);
+                    newStats.set(oldStats);
+                    newStats[oldStats.length] = oldStats[oldStats.length - 2] + segKm;
+                    newStats[oldStats.length + 1] = oldStats[oldStats.length - 1] + segHours;
+                    mainResult.stats = newStats;
+                }
+
                 isRouteActive.value = true;
 
                 endNodeId.value = mainResult.endId;
@@ -876,9 +912,34 @@ export const useRouteController = (
                 altRoutePath.value = null;
                 altRouteEta.value = "";
                 altRouteDistance.value = 0;
+                altRouteStats.value = null;
 
-                const altData = result?.alternative;
+                const altData = result?.alternative ? { ...result.alternative } : null;
                 if (altData && altData.displayPath && altData.stats) {
+                    const altPath = altData.displayPath;
+                    const altLast = altPath[altPath.length - 1];
+                    const altDist = Math.sqrt(
+                        Math.pow(altLast[0] - clickCoords[0], 2) +
+                        Math.pow(altLast[1] - clickCoords[1], 2),
+                    );
+                    if (altDist > 0.00001) {
+                        const isAts = settings.value.selectedGame === "ats";
+                        const toGame = isAts ? convertGeoToAts : convertGeoToEts2;
+                        const [lx, lz] = toGame(altLast[0], altLast[1]);
+                        const [cx, cz] = toGame(clickCoords[0], clickCoords[1]);
+                        const rawLen = Math.sqrt(Math.pow(cx - lx, 2) + Math.pow(cz - lz, 2));
+                        const segKm = rawLen / 1000;
+                        const segHours = segKm / (avgSpeed > 10 ? avgSpeed : 80);
+                        altData.displayPath = [...altPath, clickCoords] as any;
+                        altData.rawPath = altData.displayPath;
+                        const oldStats = altData.stats;
+                        const newStats = new Float32Array(oldStats.length + 2);
+                        newStats.set(oldStats);
+                        newStats[oldStats.length] = oldStats[oldStats.length - 2] + segKm;
+                        newStats[oldStats.length + 1] = oldStats[oldStats.length - 1] + segHours;
+                        altData.stats = newStats;
+                    }
+
                     const altLastIdx = (altData.rawPath.length - 1) * 2;
                     const altKm: number = altData.stats[altLastIdx] ?? 0;
                     const altRealHours: number = altData.stats[altLastIdx + 1] ?? 0;
@@ -891,6 +952,7 @@ export const useRouteController = (
                     if (kmDiff > 5 || pctDiff > 0.1) {
                         altRoutePath.value = altData.displayPath;
                         altRouteDistance.value = Math.round(altKm);
+                        altRouteStats.value = altData.stats;
 
                         const aH = Math.floor(altRealHours);
                         const aM = Math.round((altRealHours - aH) * 60);
@@ -1106,6 +1168,7 @@ export const useRouteController = (
         savedDestination.value = null;
         isYardStart.value = false;
         fullRouteDirections.value = [];
+        altRouteStats.value = null;
         updateProfile("lastDestination", null);
         stopNavigationMode();
 
@@ -1120,11 +1183,15 @@ export const useRouteController = (
             currentRoutePath.value = altRoutePath.value;
             routeDistance.value = altRouteDistance.value;
             routeEta.value = altRouteEta.value;
+            if (altRouteStats.value) {
+                routeStatsCache.value = altRouteStats.value;
+            }
             
             // Clear alternative route
             altRoutePath.value = null;
             altRouteEta.value = "";
             altRouteDistance.value = 0;
+            altRouteStats.value = null;
             
             // Redraw
             if (map.value) {
