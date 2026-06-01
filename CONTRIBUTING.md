@@ -1,4 +1,4 @@
-# Contributing to TruckNav
+# Contributing to TruckNavAdvanced
 
 First off, thank you for considering contributing! It’s people like you that make the ETS2 community great.
 

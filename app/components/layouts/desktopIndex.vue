@@ -177,7 +177,7 @@ const toggleWindow = () => {
             <div class="bottom-info">
                 <div class="status-div">
                     <div class="status">
-                        <p>TruckNavTelemetry.exe: &nbsp;</p>
+                        <p>TruckNavAdvancedTelemetry.exe: &nbsp;</p>
                         <span
                             :class="
                                 isServerRunning ? 'connected' : 'disconnected'

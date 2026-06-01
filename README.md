@@ -1,17 +1,17 @@
 <div align="center">
-  <h1>TruckNav-Sim-Advanced</h1>
+  <h1>TruckNavAdvanced</h1>
   <p><strong>External GPS Navigation System for Euro Truck Simulator 2 & American Truck Simulator</strong></p>
 </div>
 
 <br />
 
 <div align="center">
-  <img src="preview.png" alt="TruckNav-Sim-Advanced UI Preview" width="100%" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);" />
+  <img src="preview.png" alt="TruckNavAdvanced UI Preview" width="100%" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);" />
 </div>
 
 <br />
 
-TruckNav-Sim-Advanced is a real-time external GPS navigation system built with TypeScript and Vue.js. It transforms any device with a web browser — phone, tablet, or secondary monitor — into a fully featured navigation display for ETS2 and ATS. The system connects to the SCS Telemetry SDK to provide live tracking, custom graph-based routing, and an immersive driving interface.
+TruckNavAdvanced is a real-time external GPS navigation system built with TypeScript and Vue.js. It transforms any device with a web browser — phone, tablet, or secondary monitor — into a fully featured navigation display for ETS2 and ATS. The system connects to the SCS Telemetry SDK to provide live tracking, custom graph-based routing, and an immersive driving interface.
 
 ---
 

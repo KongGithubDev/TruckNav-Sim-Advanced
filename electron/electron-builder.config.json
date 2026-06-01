@@ -1,5 +1,5 @@
 {
-    "appId": "com.raresmuntean.trucknav",
+    "appId": "com.trucknavadvanced.app",
     "directories": {
         "buildResources": "resources"
     },
@@ -24,12 +24,12 @@
         "perMachine": true,
         "allowElevation": true,
         "allowToChangeInstallationDirectory": true,
-        "installerIcon": "assets/TruckNavIconOutline.ico",
-        "uninstallerIcon": "assets/TruckNavIconOutline.ico"
+        "installerIcon": "assets/TruckNavAdvancedIconOutline.ico",
+        "uninstallerIcon": "assets/TruckNavAdvancedIconOutline.ico"
     },
     "win": {
         "target": "nsis",
-        "icon": "assets/TruckNavIconOutline.png"
+        "icon": "assets/TruckNavAdvancedIconOutline.png"
     },
     "mac": {
         "category": "your.app.category.type",

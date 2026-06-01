@@ -36,7 +36,7 @@ jobs:
             - name: Upload macOS App to GitHub
               uses: actions/upload-artifact@v4
               with:
-                  name: TruckNav-macOS
+                  name: TruckNavAdvanced-macOS
                   path: |
                       electron/dist/*.dmg
                       electron/dist/*.zip
@@ -67,10 +67,10 @@ jobs:
                   cd build/Release-iphoneos
                   mkdir Payload
                   cp -R App.app Payload/
-                  zip -r TruckNav-iOS.ipa Payload
+                  zip -r TruckNavAdvanced-iOS.ipa Payload
 
             - name: Upload iOS App to GitHub
               uses: actions/upload-artifact@v4
               with:
-                  name: TruckNav-iOS
-                  path: ios/App/build/Release-iphoneos/TruckNav-iOS.ipa
+                  name: TruckNavAdvanced-iOS
+                  path: ios/App/build/Release-iphoneos/TruckNavAdvanced-iOS.ipa

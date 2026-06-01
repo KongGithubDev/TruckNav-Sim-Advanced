@@ -42,7 +42,7 @@ unhandled();
 // Define our menu templates (these are optional)
 const trayMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [
     new MenuItem({
-        label: "Show App",
+        label: "Open TruckNavAdvanced",
         click: () => {
             forceKeepHidden = false;
             const win = myCapacitorApp.getMainWindow();
@@ -54,7 +54,7 @@ const trayMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [
         },
     }),
     new MenuItem({ type: "separator" }),
-    new MenuItem({ label: "Quit App", role: "quit" }),
+    new MenuItem({ label: "Quit", role: "quit" }),
 ];
 
 // Get Config options from capacitor.config
@@ -227,7 +227,7 @@ async function getSteamPath() {
     return steamPath;
 }
 
-const exeName = "TruckNavTelemetry.exe";
+const exeName = "TruckNavAdvancedTelemetry.exe";
 let telemetryProcess: ChildProcess | null = null;
 
 async function startTelemetryServer() {

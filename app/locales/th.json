@@ -38,19 +38,19 @@
         "startMinimized": "เริ่มแบบย่อขนาด",
         "stepExecutable": "หากปลั๊กอินหายไป ให้คลิกไอคอนโฟลเดอร์และเลือกโฟลเดอร์ที่ติดตั้งเกม:",
         "stepNetwork": "ตรวจสอบให้แน่ใจว่าโทรศัพท์และพีซีเชื่อมต่อกับเครือข่าย Wi-Fi เดียวกัน",
-        "stepOpenApp": "เปิดแอป TruckNav หรือเบราว์เซอร์โดยใช้ IP ด้านล่าง",
+        "stepOpenApp": "เปิดแอป TruckNavAdvanced หรือเบราว์เซอร์โดยใช้ IP ด้านล่าง",
         "stepRunning": "ตรวจสอบให้แน่ใจว่า ETS2 / ATS กำลังทำงานอยู่บนพีซีของคุณ",
         "subtitle": "ด้านล่างนี้คือคำแนะนำการตั้งค่าแอปบนโทรศัพท์ของคุณ",
         "telemetryRunning": "ระบบ Telemetry กำลังทำงาน",
         "telemetryRunningSuffix": "หน้าต่างนี้เพื่อให้ GPS ทำงานต่อเนื่อง",
-        "title": "ยินดีต้อนรับสู่ TruckNav!",
+        "title": "ยินดีต้อนรับสู่ TruckNavAdvanced!",
         "truckingCompanion": "เพื่อนคู่คิดของนักขับรถบรรทุก",
         "troubleshoot": "หากใช้เวอร์ชันที่ไม่ถูกลิขสิทธิ์ ปลั๊กอินอาจแสดงว่า 'ไม่พบ' แม้จะตั้งค่าแล้ว"
     },
     "input": {
         "bridgeNotReachable": "ไม่สามารถเชื่อมต่อ Bridge ได้",
         "couldNotConnect": "ไม่สามารถเชื่อมต่อได้...",
-        "description": "ป้อน IP ที่แสดงใน TruckNav บนคอมพิวเตอร์ของคุณ",
+        "description": "ป้อน IP ที่แสดงใน TruckNavAdvanced บนคอมพิวเตอร์ของคุณ",
         "ipAddress": "IP Address:",
         "missingValue": "กรุณากรอกค่า",
         "placeholder": "พิมพ์ที่นี่..."

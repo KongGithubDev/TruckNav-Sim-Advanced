@@ -131,14 +131,14 @@ export class ElectronCapacitorApp {
                 app.getAppPath(),
                 "assets",
                 process.platform === "win32"
-                    ? "TruckNavIconOutline.ico"
-                    : "TruckNavIconOutline.png",
+                    ? "TruckNavAdvancedIconOutline.ico"
+                    : "TruckNavAdvancedIconOutline.png",
             ),
         );
 
         this.mainWindowState = windowStateKeeper({
-            defaultWidth: 1000,
-            defaultHeight: 800,
+            defaultWidth: 1200,
+            defaultHeight: 860,
         });
 
         const preloadPath = join(
@@ -151,10 +151,13 @@ export class ElectronCapacitorApp {
         this.MainWindow = new BrowserWindow({
             icon,
             show: false,
+            title: "TruckNavAdvanced",
             x: this.mainWindowState.x,
             y: this.mainWindowState.y,
             width: this.mainWindowState.width,
             height: this.mainWindowState.height,
+            minWidth: 800,
+            minHeight: 600,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: true,
@@ -185,8 +188,8 @@ export class ElectronCapacitorApp {
             app.getAppPath(),
             "assets",
             process.platform === "win32"
-                ? "TruckNavIconOutline.ico"
-                : "TruckNavIconOutline.png",
+                ? "TruckNavAdvancedIconOutline.ico"
+                : "TruckNavAdvancedIconOutline.png",
         );
 
         this.TrayIcon = new Tray(nativeImage.createFromPath(trayIconPath));
@@ -198,7 +201,7 @@ export class ElectronCapacitorApp {
             }
         });
 
-        this.TrayIcon.setToolTip(app.getName());
+        this.TrayIcon.setToolTip("TruckNavAdvanced — GPS for ETS2 & ATS");
         this.TrayIcon.setContextMenu(
             Menu.buildFromTemplate(this.TrayMenuTemplate),
         );

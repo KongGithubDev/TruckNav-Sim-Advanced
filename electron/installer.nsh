@@ -1,18 +1,18 @@
 !macro customInstall
-  DetailPrint "Configuring Windows Firewall for TruckNav..."
+  DetailPrint "Configuring Windows Firewall for TruckNavAdvanced..."
   
   ; 1. Clean up any old rules
-  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNav App"'
-  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNav Telemetry"'
+  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNavAdvanced App"'
+  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNavAdvanced Telemetry"'
   
   ; 2. Whitelist the Main App EXE ($INSTDIR is the install folder, ${APP_EXECUTABLE_FILENAME} is your app's main exe)
-  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="TruckNav App" dir=in action=allow program="$INSTDIR\${APP_EXECUTABLE_FILENAME}" enable=yes profile=any'
+  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="TruckNavAdvanced App" dir=in action=allow program="$INSTDIR\${APP_EXECUTABLE_FILENAME}" enable=yes profile=any'
   
   ; 3. Whitelist the Telemetry EXE
-  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="TruckNav Telemetry" dir=in action=allow program="$INSTDIR\resources\bin\TruckNavTelemetry.exe" enable=yes profile=any'
+  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="TruckNavAdvanced Telemetry" dir=in action=allow program="$INSTDIR\resources\bin\TruckNavAdvancedTelemetry.exe" enable=yes profile=any'
   
   ; 4. Whitelist the Ports (Just in case)
-  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="TruckNav Telemetry Ports" dir=in action=allow protocol=TCP localport=8628-8632,30001 profile=any'
+  nsExec::ExecToLog 'netsh advfirewall firewall add rule name="TruckNavAdvanced Telemetry Ports" dir=in action=allow protocol=TCP localport=8628-8632,30001 profile=any'
   
   ; 5. Add URL ACLs so the Express Web Server can host without permission errors
   nsExec::ExecToLog 'netsh http add urlacl url=http://*:8628/ user=Everyone'
@@ -24,10 +24,10 @@
 !macroend
 
 !macro customUnInstall
-  DetailPrint "Removing TruckNav Firewall rules..."
-  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNav App"'
-  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNav Telemetry"'
-  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNav Telemetry Ports"'
+  DetailPrint "Removing TruckNavAdvanced Firewall rules..."
+  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNavAdvanced App"'
+  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNavAdvanced Telemetry"'
+  nsExec::ExecToLog 'netsh advfirewall firewall delete rule name="TruckNavAdvanced Telemetry Ports"'
   nsExec::ExecToLog 'netsh http delete urlacl url=http://*:8628/'
   nsExec::ExecToLog 'netsh http delete urlacl url=http://*:8629/'
   nsExec::ExecToLog 'netsh http delete urlacl url=http://*:8630/'

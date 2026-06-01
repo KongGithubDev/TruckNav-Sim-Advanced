@@ -38,19 +38,19 @@
         "startMinimized": "Minimiert starten",
         "stepExecutable": "Falls das Plugin fehlt, klicke auf das Ordner-Symbol und wähle den ausführbaren Spielordner aus:",
         "stepNetwork": "Stelle sicher, dass dein Handy mit demselben Netzwerk wie dein PC verbunden ist.",
-        "stepOpenApp": "Öffne die TruckNav-App oder den Webbrowser mit der unten angezeigten IP-Adresse.",
+        "stepOpenApp": "Öffne die TruckNavAdvanced-App oder den Webbrowser mit der unten angezeigten IP-Adresse.",
         "stepRunning": "Stelle sicher, dass ETS2 / ATS auf deinem PC läuft.",
         "subtitle": "Unten findest du die Anleitung, um die App auf deinem Handy einzurichten.",
         "telemetryRunning": "Telemetry läuft.",
         "telemetryRunningSuffix": "dieses Fenster, damit das GPS aktiv bleibt.",
-        "title": "Willkommen bei TruckNav!",
+        "title": "Willkommen bei TruckNavAdvanced!",
         "truckingCompanion": "Dein Trucking-Begleiter",
         "troubleshoot": "Falls du eine gecrackte Version oder ein Repack verwendest, wird das Plugin möglicherweise auch nach der Einrichtung als „Fehlt“ angezeigt."
     },
     "input": {
         "bridgeNotReachable": "Bridge nicht erreichbar",
         "couldNotConnect": "Verbindung fehlgeschlagen...",
-        "description": "Gib die IP ein, die TruckNav auf deinem Computer anzeigt",
+        "description": "Gib die IP ein, die TruckNavAdvanced auf deinem Computer anzeigt",
         "ipAddress": "IP-Adresse:",
         "missingValue": "Bitte gib einen Wert ein.",
         "placeholder": "Hier eingeben..."

@@ -3,7 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-const EXE_NAME = "TruckNavTelemetry.exe";
+const EXE_NAME = "TruckNavAdvancedTelemetry.exe";
 
 export default defineNitroPlugin((nitroApp) => {
     const rootDir = process.cwd();

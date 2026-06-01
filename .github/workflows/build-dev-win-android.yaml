@@ -39,7 +39,7 @@ jobs:
             - name: Upload Windows EXE to GitHub
               uses: actions/upload-artifact@v4
               with:
-                  name: TruckNav-Windows-Dev
+                  name: TruckNavAdvanced-Windows-Dev
                   path: electron/dist/*.exe
 
     # ---------------------------------------------------------
@@ -83,5 +83,5 @@ jobs:
             - name: Upload Android APK to GitHub
               uses: actions/upload-artifact@v4
               with:
-                  name: TruckNav-Android-Dev
+                  name: TruckNavAdvanced-Android-Dev
                   path: android/app/build/outputs/apk/debug/app-debug.apk
