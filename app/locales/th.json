@@ -56,7 +56,8 @@
         "placeholder": "พิมพ์ที่นี่..."
     },
     "map": {
-        "externalRouteDetected": "พบเส้นทางภายนอก: ตั้งจุดหมาย",
+        "externalRouteDetected": "พบเส้นทางภายนอกในเกม",
+        "setDestination": "ตั้งจุดหมายบนแผนที่",
         "followRoute": "ติดตามเส้นทาง",
         "tappingDisabled": "ปิดการแตะแผนที่",
         "tappingEnabled": "เปิดการแตะแผนที่"

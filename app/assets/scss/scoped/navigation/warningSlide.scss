@@ -47,3 +47,33 @@
     gap: 0.8rem;
     align-items: center;
 }
+
+.warning-action-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border: 1px solid $primaryColor;
+    border-radius: 6px;
+    background: rgba($primaryColor, 0.15);
+    color: $primaryColor;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba($primaryColor, 0.3);
+        box-shadow: 0 0 12px rgba($primaryColor, 0.3);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+.compact-trip-progress.has-action {
+    padding-right: 8px;
+}

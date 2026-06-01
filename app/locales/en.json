@@ -56,7 +56,8 @@
         "placeholder": "Type here..."
     },
     "map": {
-        "externalRouteDetected": "External Route Detected: Set Waypoint",
+        "externalRouteDetected": "External route detected in-game",
+        "setDestination": "Set on map",
         "followRoute": "Follow Route",
         "tappingDisabled": "Tapping Disabled",
         "tappingEnabled": "Tapping Enabled"

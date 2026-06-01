@@ -914,6 +914,8 @@ const onCancelRoute = () => {
                             :show-if="hasInGameMarker && !isRouteActive"
                             :reset-on="isRouteActive"
                             :text="t('map.externalRouteDetected')"
+                            :action-button-label="t('map.setDestination')"
+                            @action-click="toggleEnableClicking"
                         />
 
                         <WarningSlide

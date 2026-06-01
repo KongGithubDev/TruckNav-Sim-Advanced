@@ -56,7 +56,8 @@
         "placeholder": "Hier eingeben..."
     },
     "map": {
-        "externalRouteDetected": "Externe Route erkannt: Wegpunkt setzen",
+        "externalRouteDetected": "Externe Route im Spiel erkannt",
+        "setDestination": "Auf Karte setzen",
         "followRoute": "Route folgen",
         "tappingDisabled": "Tippen deaktiviert",
         "tappingEnabled": "Tippen aktiviert"

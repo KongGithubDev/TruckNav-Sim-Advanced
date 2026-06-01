@@ -1,8 +1,13 @@
 <script lang="ts" setup>
+const emit = defineEmits<{
+    actionClick: [];
+}>();
+
 const props = defineProps<{
     showIf: boolean;
     resetOn?: boolean;
     text: string;
+    actionButtonLabel?: string;
 }>();
 
 const isExpanded = ref(false);
@@ -19,6 +24,11 @@ watch(
 const onToggleExpanded = () => {
     isExpanded.value = !isExpanded.value;
 };
+
+const onActionClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    emit('actionClick');
+};
 </script>
 
 <template>
@@ -26,7 +36,7 @@ const onToggleExpanded = () => {
         <div
             v-if="showIf"
             class="compact-trip-progress"
-            :class="{ expanded: isExpanded }"
+            :class="{ expanded: isExpanded, 'has-action': !!actionButtonLabel }"
             v-on:click="onToggleExpanded"
         >
             <Icon v-if="isExpanded" name="lucide:chevron-right" size="22" />
@@ -39,6 +49,14 @@ const onToggleExpanded = () => {
                     <span class="text-nowrap">{{ text }}</span>
                 </div>
             </div>
+
+            <button
+                v-if="actionButtonLabel"
+                class="warning-action-btn"
+                @click="onActionClick"
+            >
+                {{ actionButtonLabel }}
+            </button>
         </div>
     </Transition>
 </template>
