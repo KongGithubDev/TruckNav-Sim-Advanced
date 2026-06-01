@@ -405,7 +405,9 @@ watch(
 watch(
     () => routeTrafficInfo.value?.routeColors,
     (colors) => {
-        if (!isRouteActive.value) return;
+        // Apply traffic colors to the route whenever they update,
+        // even during route selection mode (before isRouteActive is true)
+        if (!currentRoutePath.value) return;
         redrawRouteWithTraffic(colors || null);
     }
 );
@@ -453,12 +455,14 @@ onMounted(async () => {
             initCameraListeners();
 
             // Setup traffic layers
-            setupTrafficLayers(map.value);
+            // map is guaranteed non-null inside the load callback
+            const m = map.value!;
+            setupTrafficLayers(m);
 
             // Start traffic polling if enabled
             if (activeSettings.value.showTraffic) {
                 const game = settings.value.selectedGame || "ets2";
-                setEnabled(true, map.value, game);
+                setEnabled(true, m, game);
             }
         });
 
@@ -576,13 +580,17 @@ const onRouteOverview = () => {
     if (!map.value || !currentRoutePath.value || currentRoutePath.value.length === 0) return;
     const path = currentRoutePath.value;
     
-    let minLng = path[0][0];
-    let minLat = path[0][1];
-    let maxLng = path[0][0];
-    let maxLat = path[0][1];
+    const firstPt = path[0];
+    if (!firstPt) return;
+    
+    let minLng = firstPt[0];
+    let minLat = firstPt[1];
+    let maxLng = firstPt[0];
+    let maxLat = firstPt[1];
 
     for (let i = 1; i < path.length; i++) {
         const pt = path[i];
+        if (!pt) continue;
         if (pt[0] < minLng) minLng = pt[0];
         if (pt[0] > maxLng) maxLng = pt[0];
         if (pt[1] < minLat) minLat = pt[1];

@@ -153,8 +153,8 @@ self.onmessage = async (e: MessageEvent) => {
             rawDisplayPath.push(fullPath[fullPath.length - 1]!);
 
             // Extend path to the exact destination coordinates
-            if (targetCoords) {
-                const last = rawDisplayPath[rawDisplayPath.length - 1];
+            if (targetCoords && rawDisplayPath.length > 0) {
+                const last = rawDisplayPath[rawDisplayPath.length - 1]!;
                 const dx = last[0] - targetCoords[0];
                 const dy = last[1] - targetCoords[1];
                 if (dx * dx + dy * dy > 1e-12) {

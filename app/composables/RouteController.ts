@@ -1,4 +1,4 @@
-import maplibregl from "maplibre-gl";
+import type { Map as MaplibreMap, GeoJSONSource } from "maplibre-gl";
 import { generateDestinationIcon } from "~/assets/utils/map/markers";
 import {
     getBearing,
@@ -19,7 +19,7 @@ import {
 import { convertGeoToEts2, convertGeoToAts } from "~/assets/utils/map/converters";
 
 export const useRouteController = (
-    map: Ref<maplibregl.Map | null>,
+    map: Ref<MaplibreMap | null>,
     adjacency: Map<number, any>,
     nodeCoords: Map<number, [number, number]>,
     stopNavigationMode: () => void,
@@ -115,10 +115,10 @@ export const useRouteController = (
             } else {
                 const lineSource = map.value.getSource(
                     "turn-arrows-line-source",
-                ) as maplibregl.GeoJSONSource;
+                ) as GeoJSONSource;
                 const headSource = map.value.getSource(
                     "turn-arrows-head-source",
-                ) as maplibregl.GeoJSONSource;
+                ) as GeoJSONSource;
 
                 const emptyData: any = {
                     type: "FeatureCollection",
@@ -311,10 +311,10 @@ export const useRouteController = (
 
         const lineSource = map.value.getSource(
             "turn-arrows-line-source",
-        ) as maplibregl.GeoJSONSource;
+        ) as GeoJSONSource;
         const headSource = map.value.getSource(
             "turn-arrows-head-source",
-        ) as maplibregl.GeoJSONSource;
+        ) as GeoJSONSource;
 
         if (lineSource)
             lineSource.setData({
@@ -546,7 +546,7 @@ export const useRouteController = (
             });
         }
         
-        const source = rawMap.getSource("route-line") as maplibregl.GeoJSONSource;
+        const source = map.value.getSource("route-line") as GeoJSONSource;
         if (source) {
             source.setData({
                 type: "FeatureCollection",
@@ -583,7 +583,7 @@ export const useRouteController = (
             });
         }
 
-        const source = rawMap.getSource("alt-route-line") as maplibregl.GeoJSONSource;
+        const source = rawMap.getSource("alt-route-line") as GeoJSONSource;
         if (source) {
             source.setData({
                 type: "FeatureCollection",
@@ -1177,12 +1177,41 @@ export const useRouteController = (
         if (map.value && currentRoutePath.value && currentRoutePath.value.length > 0) {
             const passedPath = currentRoutePath.value.slice(0, currentRouteIndex.value + 1);
             const remainingPath = currentRoutePath.value.slice(currentRouteIndex.value);
-            
+
             if (passedPath.length > 1) {
                 setMapLibreData(map.value, "route-passed-line", "LineString", passedPath, { color: "#5a6a7c" });
             }
             if (remainingPath.length > 1) {
-                setMapLibreData(map.value, "route-line", "LineString", remainingPath, { color: activeSettings.value.routeColor });
+                // Preserve traffic congestion colors when redrawing the route on progress update
+                const { routeTrafficInfo } = useTrafficData();
+                const colors = routeTrafficInfo.value?.routeColors;
+                const fullPath = currentRoutePath.value;
+                if (colors && colors.length === fullPath.length - 1) {
+                    // Draw remaining path with per-segment traffic colors
+                    const remainingColors = colors.slice(currentRouteIndex.value);
+                    const features = [];
+                    for (let i = 0; i < remainingPath.length - 1; i++) {
+                        const props: any = {};
+                        if (remainingColors[i]) props.color = remainingColors[i];
+                        features.push({
+                            type: "Feature",
+                            geometry: {
+                                type: "LineString",
+                                coordinates: [remainingPath[i], remainingPath[i + 1]],
+                            },
+                            properties: props,
+                        });
+                    }
+                    const source = map.value.getSource("route-line") as GeoJSONSource;
+                    if (source) {
+                        source.setData({
+                            type: "FeatureCollection",
+                            features: features as any,
+                        });
+                    }
+                } else {
+                    setMapLibreData(map.value, "route-line", "LineString", remainingPath, { color: activeSettings.value.routeColor });
+                }
             }
         }
 

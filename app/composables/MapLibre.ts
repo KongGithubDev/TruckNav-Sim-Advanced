@@ -28,7 +28,8 @@ export async function initializeMap(
     };
 
     async function loadPmtiles(fileName: string, key: string) {
-        const url = `${window.location.origin}/data/${settings.value.selectedGame}/map-data/tiles/${fileName}.mp3`;
+        const currentGame = settings.value.selectedGame || "ets2";
+        const url = `${window.location.origin}/data/${currentGame}/map-data/tiles/${fileName}.mp3`;
 
         try {
             const response = await fetch(url);
@@ -51,18 +52,20 @@ export async function initializeMap(
         loadPmtiles("map-data-combined", "all-data"),
     ]);
 
+    const currentGame = settings.value.selectedGame || "ets2";
+
     const style: StyleSpecification = {
         version: 8,
 
         name: "PMTiles (local)",
         sources: {
-            [`${settings.value.selectedGame}`]: {
+            [`map-roads`]: {
                 type: "vector",
                 url: `pmtiles://roads`,
             },
         },
 
-        sprite: `${baseUrl}/sprites/${settings.value.selectedGame}/sprites`,
+        sprite: `${baseUrl}/sprites/${currentGame}/sprites`,
         glyphs: `${baseUrl}/glyphs/{fontstack}/{range}.pbf`,
 
         layers: [
@@ -74,8 +77,8 @@ export async function initializeMap(
             {
                 id: "lines",
                 type: "line",
-                source: `${settings.value.selectedGame}`,
-                "source-layer": `${settings.value.selectedGame}`,
+                source: `map-roads`,
+                "source-layer": `${currentGame}`,
                 paint: {
                     "line-color": "#3d546e",
                     "line-width": 2,
@@ -185,8 +188,8 @@ export async function initializeMap(
         map.addLayer({
             id: "roads",
             type: "line",
-            source: `${settings.value.selectedGame}`,
-            "source-layer": `${settings.value.selectedGame}`,
+            source: `map-roads`,
+            "source-layer": `${settings.value.selectedGame || "ets2"}`,
             layout: {
                 "line-join": ["step", ["zoom"], "miter", 8, "round"],
                 "line-cap": ["step", ["zoom"], "butt", 8, "round"],

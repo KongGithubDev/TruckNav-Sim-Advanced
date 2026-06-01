@@ -103,7 +103,7 @@ export function useEtsTelemetry() {
 
                 const data = rawData as TelemetryPacket;
 
-                if (data.game.toLowerCase() !== settings.value.selectedGame) {
+                if (data.game.toLowerCase() !== (settings.value.selectedGame || "ets2")) {
                     resetDataOnDisconnected(onUpdate);
                     return;
                 }
@@ -156,7 +156,7 @@ export function useEtsTelemetry() {
         } = getTruckState(
             data,
             lastPosition,
-            settings.value.selectedGame,
+            settings.value.selectedGame || "ets2",
             headingOffset,
             speedSamples,
             maxSamples,
@@ -186,7 +186,7 @@ export function useEtsTelemetry() {
             hasActiveJob,
             cityTarget: destinationCity,
             companyTarget: destinationCompany,
-        } = getJobState(data, settings.value.selectedGame);
+        } = getJobState(data, settings.value.selectedGame || "ets2");
 
         Object.assign(jobState, {
             hasActiveJob: hasActiveJob,

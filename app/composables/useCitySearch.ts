@@ -15,12 +15,12 @@ const citiesData = ref<CityData[]>([]);
 const isLoaded = ref(false);
 
 export function useCitySearch() {
-    const { activeSettings } = useSettings();
+    const { settings } = useSettings();
 
     const loadCities = async () => {
         if (isLoaded.value) return;
         try {
-            const game = activeSettings.value.selectedGame || "ets2";
+            const game = settings.value.selectedGame || "ets2";
             // We use the fetch API to load the JSON file from the public directory
             const res = await fetch(`/data/${game}/map-data/cities.json`);
             if (!res.ok) throw new Error("Failed to load cities.json");

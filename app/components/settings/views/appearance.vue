@@ -343,6 +343,17 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                     <Icon name="lucide:volume-2" size="18" />
                     {{ t("settings.testVoice") || "Test Voice" }}
                 </button>
+
+                <!-- Voice language note -->
+                <p style="
+                    margin-top: 12px;
+                    font-size: 1.2rem;
+                    color: #a1a1aa;
+                    line-height: 1.6;
+                ">
+                    <Icon name="lucide:info" size="14" style="vertical-align: middle; margin-right: 4px;" />
+                    {{ t("settings.voiceNote") }}
+                </p>
             </div>
         </Transition>
 

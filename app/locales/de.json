@@ -105,6 +105,7 @@
         "truckMarkerSize": "Truck Marker Größe",
         "units": "Einheiten",
         "voiceLanguage": "Sprachausgabe",
+        "voiceNote": "Die Sprachausgabe liest in der ausgewählten App-Sprache vor. Für Thai-Stimme stelle die Sprache in den Allgemeinen Einstellungen auf Thai.",
         "voiceSpeeding": "Zu schnell",
         "voiceTurn1km": "Abbiegen (1 km)",
         "voiceTurn200m": "Abbiegen (200 m)",

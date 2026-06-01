@@ -51,8 +51,13 @@ export function useVoiceWarnings() {
         // Find preferred voice and set language for proper pronunciation
         applyVoice(utterance);
 
-        // Set the language so the TTS engine uses the correct pronunciation
-        utterance.lang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
+        // Set the language to match the selected voice (or fall back to app locale)
+        // This ensures Thai voices speak Thai, English voices speak English, etc.
+        if (utterance.voice) {
+            utterance.lang = utterance.voice.lang;
+        } else {
+            utterance.lang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
+        }
 
         // Adjust rate and pitch for better sound
         utterance.rate = 1.0;
@@ -98,7 +103,12 @@ export function useVoiceWarnings() {
         const testMessage = t('warnings.testVoice');
         const utterance = new SpeechSynthesisUtterance(testMessage);
         applyVoice(utterance);
-        utterance.lang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
+        // Use voice's language for proper pronunciation
+        if (utterance.voice) {
+            utterance.lang = utterance.voice.lang;
+        } else {
+            utterance.lang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
+        }
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
         window.speechSynthesis.speak(utterance);

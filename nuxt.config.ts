@@ -26,6 +26,20 @@ export default defineNuxtConfig({
                 },
             },
         },
+        build: {
+            rollupOptions: {
+                output: {
+                    manualChunks(id: string) {
+                        if (id.includes("node_modules/maplibre-gl")) return "maplibre";
+                        if (id.includes("node_modules/proj4")) return "proj4";
+                        if (id.includes("node_modules/@turf")) return "turf";
+                        if (id.includes("node_modules/pmtiles")) return "pmtiles";
+                        if (id.includes("node_modules/rbush")) return "rbush";
+                        if (id.includes("node_modules")) return "vendor";
+                    },
+                },
+            },
+        },
     },
 
     app: {
