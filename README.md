@@ -43,7 +43,7 @@ TruckNavAdvanced is a real-time external GPS navigation system built with TypeSc
 
 | Component | Status |
 |-----------|--------|
-| ETS2 / ATS | Supported up to version 1.59 |
+| ETS2 / ATS | Supported up to version 1.59.1.3 (map data regenerated from game files) |
 | Official DLCs | All map expansions supported |
 | Map Mods (ProMods, etc.) | Not currently supported |
 | Platform | Web (any browser), Android (APK), Electron (desktop) |
@@ -81,6 +81,24 @@ Access the application at `http://<your-local-ip>:3000`.
 > Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 > ```
 
+## Map Data
+
+City coordinates, company locations, and road network data are extracted directly from the latest ETS2 / ATS game files using the [truckermudgeon/maps](https://github.com/truckermudgeon/maps) parser toolchain. To regenerate the map data after a game update:
+
+```bash
+# 1. Clone the parser toolchain
+git clone --recurse-submodules https://github.com/truckermudgeon/maps.git
+cd maps
+npm install
+npm run build -w packages/clis/parser
+
+# 2. Parse the game files
+npx parser -i "path/to/Euro Truck Simulator 2" -o ./parsed
+
+# 3. Convert to project format (see app/scripts/)
+node app/scripts/convert.mjs
+```
+
 ---
 
 ## Architecture
@@ -101,7 +119,7 @@ Include a description and screenshot of the issue when possible.
 
 ## Acknowledgements
 
-- [@truckermudgeon](https://github.com/truckermudgeon) — The `maps` repository provided the foundational logic for map parsing and WGS84 coordinate conversion.
+- [@truckermudgeon](https://github.com/truckermudgeon) — The `maps` repository provides the foundational logic for map parsing, WGS84 coordinate conversion, and the extraction tools used to regenerate city and company location data from the latest game files.
 - [@RenCloud](https://github.com/RenCloud) — The `scs-sdk-plugin` project made telemetry communication between the game and web environment possible.
 
 <div align="center">

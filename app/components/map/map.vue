@@ -15,7 +15,7 @@ defineProps<{ goHome: () => void }>();
 const mapEl = shallowRef<HTMLElement | null>(null);
 const map = shallowRef<maplibregl.Map | null>(null);
 const isSettingsPanelOpened = ref(false);
-const isClickingEnabled = ref(true);
+const isClickingEnabled = ref(false);
 
 // UI STATE
 const isSheetHidden = ref(false);
@@ -251,13 +251,13 @@ watch(
                     averageSpeed.value,
                 );
 
-                isClickingEnabled.value = true;
+                isClickingEnabled.value = false;
             }
         } else if (!hasJob && currentJobKey.value !== "") {
             clearRouteState();
             stopNavigationMode();
             currentJobKey.value = "";
-            isClickingEnabled.value = true;
+            isClickingEnabled.value = false;
         }
     },
 );
@@ -617,7 +617,7 @@ const toggleSettingsPanel = () => {
 const onCancelRoute = () => {
     clearRouteState();
     stopNavigationMode();
-    isClickingEnabled.value = true;
+    isClickingEnabled.value = false;
 };
 </script>
 
