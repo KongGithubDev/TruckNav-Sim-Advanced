@@ -7,7 +7,7 @@ import { useVoiceWarnings } from "~/composables/useVoiceWarnings";
 const { settings, activeSettings, updateProfile, DEFAULT_SETTINGS } =
     useSettings();
 const { t } = useTranslations();
-const { availableVoices, loadVoices } = useVoiceWarnings();
+const { availableVoices, loadVoices, testVoice } = useVoiceWarnings();
 
 const voiceOptions = computed(() => {
     return availableVoices.value.map(v => ({
@@ -107,6 +107,16 @@ function toggleVoiceWarnings() {
 
 function updateVoiceLanguage(val: string) {
     updateProfile("voiceLanguage", val);
+}
+
+function toggleVoiceCategory(category: string, enabled: boolean) {
+    const categories = { ...activeSettings.value.voiceWarningCategories, [category]: enabled };
+    updateProfile("voiceWarningCategories", categories);
+}
+
+function handleTestVoice() {
+    loadVoices();
+    setTimeout(() => testVoice(), 200);
 }
 
 watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
@@ -238,27 +248,101 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
         </div>
 
         <Transition name="fade-collapse">
-            <div v-if="activeSettings.voiceWarnings" class="option setting" style="margin-top: 10px;">
-                <div class="option-title" style="margin-left: 30px;">
-                    <Icon name="lucide:languages" size="24" />
-                    <p>Voice Language</p>
+            <div v-if="activeSettings.voiceWarnings" class="voice-options" style="margin-top: 10px; margin-left: 30px;">
+                <!-- Language selector -->
+                <div class="option setting" style="margin-bottom: 12px;">
+                    <div class="option-title">
+                        <Icon name="lucide:languages" size="20" />
+                        <p>{{ t("settings.voiceLanguage") || "Voice Language" }}</p>
+                    </div>
+
+                    <USelect
+                        :model-value="activeSettings.voiceLanguage"
+                        @update:model-value="(val: string) => updateVoiceLanguage(val)"
+                        :items="voiceOptions"
+                        variant="none"
+                        class="selector"
+                        value-attribute="value"
+                        option-attribute="label"
+                        :ui="{
+                            trailingIcon: 'shrink-0 size-[20px] text-white !px-6',
+                            content: 'bg-[#222e3c] shadow-xl rounded-md',
+                            item: 'flex items-center justify-between text-[1.6rem] font-BOLD !py-2 !px-3 text-[#f2f2f2] data-[highlighted]:bg-[#3d546e] rounded cursor-pointer transition-colors',
+                            itemTrailingIcon: 'text-white',
+                        }"
+                    />
                 </div>
 
-                <USelect
-                    :model-value="activeSettings.voiceLanguage"
-                    @update:model-value="(val: string) => updateVoiceLanguage(val)"
-                    :items="voiceOptions"
-                    variant="none"
-                    class="selector"
-                    value-attribute="value"
-                    option-attribute="label"
-                    :ui="{
-                        trailingIcon: 'shrink-0 size-[20px] text-white !px-6',
-                        content: 'bg-[#222e3c] shadow-xl rounded-md',
-                        item: 'flex items-center justify-between text-[1.6rem] font-BOLD !py-2 !px-3 text-[#f2f2f2] data-[highlighted]:bg-[#3d546e] rounded cursor-pointer transition-colors',
-                        itemTrailingIcon: 'text-white',
-                    }"
-                />
+                <!-- Warning type toggles -->
+                <div class="voice-categories" style="display: flex; flex-direction: column; gap: 8px;">
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.speeding ?? true"
+                            @change="(e: any) => toggleVoiceCategory('speeding', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:alert-triangle" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceSpeeding") || "Speeding" }}</span>
+                    </label>
+
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.turn_1km ?? true"
+                            @change="(e: any) => toggleVoiceCategory('turn_1km', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:arrow-right" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTurn1km") || "Turn (1 km)" }}</span>
+                    </label>
+
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.turn_200m ?? true"
+                            @change="(e: any) => toggleVoiceCategory('turn_200m', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:corner-right-up" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTurn200m") || "Turn (200 m)" }}</span>
+                    </label>
+
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.traffic_ahead ?? true"
+                            @change="(e: any) => toggleVoiceCategory('traffic_ahead', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:car" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTraffic") || "Traffic Alert" }}</span>
+                    </label>
+                </div>
+
+                <!-- Test voice button -->
+                <button
+                    class="test-voice-btn"
+                    @click="handleTestVoice"
+                    style="
+                        margin-top: 14px;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 8px 16px;
+                        background: var(--theme-color);
+                        color: #fff;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 1.3rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: opacity 0.2s;
+                    "
+                >
+                    <Icon name="lucide:volume-2" size="18" />
+                    {{ t("settings.testVoice") || "Test Voice" }}
+                </button>
             </div>
         </Transition>
 

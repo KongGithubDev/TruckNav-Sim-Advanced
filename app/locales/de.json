@@ -102,7 +102,13 @@
         "traffic": "Verkehrsschicht (Truckersmp)",
         "trafficServer": "Verkehrsserver",
         "truckMarkerSize": "Truck Marker Größe",
-        "units": "Einheiten"
+        "units": "Einheiten",
+        "voiceLanguage": "Sprachausgabe",
+        "voiceSpeeding": "Zu schnell",
+        "voiceTurn1km": "Abbiegen (1 km)",
+        "voiceTurn200m": "Abbiegen (200 m)",
+        "voiceTraffic": "Verkehrswarnung",
+        "testVoice": "Test Stimme"
     },
     "uiComponents": {
         "fuelDescription": "Zeigt deinen verbleibenden Kraftstoff an und pulsiert bei niedrigem Stand.",

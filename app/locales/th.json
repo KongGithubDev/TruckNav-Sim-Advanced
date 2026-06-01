@@ -100,7 +100,13 @@
         "traffic": "ชั้นจราจร (Truckersmp)",
         "trafficServer": "เซิร์ฟเวอร์จราจร",
         "truckMarkerSize": "ขนาดไอคอนรถบรรทุก",
-        "units": "หน่วยวัด"
+        "units": "หน่วยวัด",
+        "voiceLanguage": "ภาษาเสียง",
+        "voiceSpeeding": "ขับเร็วเกิน",
+        "voiceTurn1km": "เลี้ยว (1 กม.)",
+        "voiceTurn200m": "เลี้ยว (200 ม.)",
+        "voiceTraffic": "แจ้งเตือนจราจร",
+        "testVoice": "ทดสอบเสียง"
     },
     "uiComponents": {
         "fuelDescription": "แสดงระดับน้ำมันที่เหลืออยู่และจะกะพริบเมื่อน้ำมันใกล้หมด",

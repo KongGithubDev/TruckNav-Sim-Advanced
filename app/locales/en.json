@@ -102,7 +102,13 @@
         "traffic": "Traffic Layer (Truckersmp)",
         "trafficServer": "Traffic Server",
         "truckMarkerSize": "Truck Marker Size",
-        "units": "Units"
+        "units": "Units",
+        "voiceLanguage": "Voice Language",
+        "voiceSpeeding": "Speeding",
+        "voiceTurn1km": "Turn (1 km)",
+        "voiceTurn200m": "Turn (200 m)",
+        "voiceTraffic": "Traffic Alert",
+        "testVoice": "Test Voice"
     },
     "uiComponents": {
         "fuelDescription": "Shows your remaining fuel level and it pulses when running low.",

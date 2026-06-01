@@ -26,6 +26,12 @@ export interface GameProfile {
     autoDayNightTheme: boolean;
     voiceWarnings: boolean;
     voiceLanguage: string;
+    voiceWarningCategories: {
+        speeding: boolean;
+        turn_1km: boolean;
+        turn_200m: boolean;
+        traffic_ahead: boolean;
+    };
 }
 
 export interface AppSettingsState {
@@ -56,6 +62,12 @@ const DEFAULT_PROFILE: GameProfile = {
     autoDayNightTheme: true,
     voiceWarnings: true,
     voiceLanguage: "", // Will use system default if empty
+    voiceWarningCategories: {
+        speeding: true,
+        turn_1km: true,
+        turn_200m: true,
+        traffic_ahead: true,
+    },
 };
 
 function createDefaultSettings(): AppSettingsState {
