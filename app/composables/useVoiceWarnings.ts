@@ -1,9 +1,16 @@
 export function useVoiceWarnings() {
-    const { activeSettings } = useSettings();
+    const { activeSettings, settings } = useSettings();
+    const { t } = useTranslations();
     const availableVoices = ref<SpeechSynthesisVoice[]>([]);
     
     // Track last spoken times to avoid spamming
     const lastSpoken = new Map<string, number>();
+
+    const LOCALE_TO_LANG: Record<string, string> = {
+        en: "en-US",
+        de: "de-DE",
+        th: "th-TH",
+    };
 
     const loadVoices = () => {
         availableVoices.value = window.speechSynthesis.getVoices();
@@ -41,8 +48,11 @@ export function useVoiceWarnings() {
 
         const utterance = new SpeechSynthesisUtterance(message);
         
-        // Find preferred voice
+        // Find preferred voice and set language for proper pronunciation
         applyVoice(utterance);
+
+        // Set the language so the TTS engine uses the correct pronunciation
+        utterance.lang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
 
         // Adjust rate and pitch for better sound
         utterance.rate = 1.0;
@@ -63,7 +73,14 @@ export function useVoiceWarnings() {
                 return;
             }
         }
-        // Default to Thai if available and no specific voice is selected
+        // Default to a voice matching the current locale if available
+        const localeLang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
+        const localeVoice = availableVoices.value.find(v => v.lang.startsWith(localeLang));
+        if (localeVoice) {
+            utterance.voice = localeVoice;
+            return;
+        }
+        // Fallback to Thai if available
         const thaiVoice = availableVoices.value.find(v => v.lang.includes("th"));
         if (thaiVoice) {
             utterance.voice = thaiVoice;
@@ -78,8 +95,10 @@ export function useVoiceWarnings() {
         if (!window.speechSynthesis) return;
         window.speechSynthesis.cancel(); // Stop any ongoing speech
         
-        const utterance = new SpeechSynthesisUtterance("This is a test voice message. If you hear this, your voice is working.");
+        const testMessage = t('warnings.testVoice');
+        const utterance = new SpeechSynthesisUtterance(testMessage);
         applyVoice(utterance);
+        utterance.lang = LOCALE_TO_LANG[settings.value.locale] || "en-US";
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
         window.speechSynthesis.speak(utterance);

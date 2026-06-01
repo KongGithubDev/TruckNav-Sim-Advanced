@@ -99,7 +99,7 @@
         "textTheme": "Text Theme",
         "theme": "Theme",
         "title": "Settings",
-        "traffic": "Traffic Layer (Truckersmp)",
+        "traffic": "Traffic Layer (TruckersMP)",
         "trafficServer": "Traffic Server",
         "truckMarkerSize": "Truck Marker Size",
         "units": "Units",
@@ -123,5 +123,31 @@
         "speedTitle": "Speed",
         "topBarDescription": "Hides the whole top bar with drive info.",
         "topBarTitle": "Top Bar"
+    },
+    "warnings": {
+        "speedLimitExceeded": "Warning, speed limit exceeded",
+        "trafficAhead": "Traffic ahead – expect a {delay}-minute delay",
+        "testVoice": "This is a test voice message. If you hear this, your voice is working."
+    },
+    "directions": {
+        "headOnRoute": "Head on Route",
+        "turnLeft": "Turn left",
+        "turnRight": "Turn right",
+        "keepLeft": "Keep left",
+        "keepRight": "Keep right",
+        "takeExit": "Take the exit",
+        "exitAtRoundabout": "exit at the roundabout",
+        "roundaboutExit": "{number}{suffix} exit",
+        "arrived": "Arrived"
+    },
+    "routeSelection": {
+        "title": "Choose a route",
+        "fastest": "Fastest",
+        "alternative": "Alternative",
+        "cancel": "Cancel",
+
+        "fastDesc": "Quickest arrival",
+        "altDesc": "Avoids congestion",
+        "timeDiff": "{min} min faster"
     }
 }

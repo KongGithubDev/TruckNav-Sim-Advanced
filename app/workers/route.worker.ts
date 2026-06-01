@@ -74,6 +74,7 @@ self.onmessage = async (e: MessageEvent) => {
                 selectedGame,
                 sdkScale,
                 avgSpeed,
+                trafficPoints,
             } = payload;
 
             const mainResult = calculateRoute(
@@ -110,6 +111,7 @@ self.onmessage = async (e: MessageEvent) => {
                 ownedDlcs,
                 targetCoords,
                 mainRouteEdgeIds,
+                trafficPoints,
             );
         }
 

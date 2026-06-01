@@ -19,8 +19,11 @@ TruckNavAdvanced is a real-time external GPS navigation system built with TypeSc
 
 - **Real-Time Navigation:** Live truck tracking with automatic camera follow, smooth rotation, and pitch adjustment.
 - **Custom Routing Engine:** A dedicated A\*-based pathfinding algorithm powered by a pre-compiled road network graph, with support for edge-exclusion alternative routes.
-- **Alternative Routes:** The engine computes a secondary path alongside the primary route, displayed as a selectable overlay with time and distance comparison.
-- **Traffic-Adjusted ETA:** Estimated time of arrival dynamically calculated using current truck speed and real-time congestion data from TruckersMP.
+- **Alternative Routes:** The engine computes a secondary path alongside the primary route, displayed as a selectable overlay with time, distance, and traffic comparison.
+- **Alternative Route Traffic Visualization:** Both primary and alternative routes display per-segment traffic congestion colors (green → orange → red) on the map.
+- **Route Selection Card:** A polished route comparison card with gradient UI, time difference display ("X min faster"), traffic delay badges, ETA and distance stats, keyboard accessibility, and multi-language support including Thai.
+- **Alt Route Swap Card:** After route confirmation, the alt route swap card shows traffic delay estimates alongside ETA and distance.
+- **Traffic-Adjusted ETA:** Estimated time of arrival dynamically calculated using current truck speed and real-time congestion data from TruckersMP, with a continuous density-to-delay model for smooth gradual delay estimates rather than binary thresholds.
 - **Auto Day/Night Theme:** The interface automatically switches between light and dark modes based on the in-game time of day.
 - **Auto-Zoom on Turns:** Camera automatically pitches and zooms when approaching complex intersections or exits.
 - **Voice Guidance:** Configurable audio alerts for overspeeding, upcoming turns, and traffic conditions.
@@ -29,7 +32,9 @@ TruckNavAdvanced is a real-time external GPS navigation system built with TypeSc
 - **Rerouting Detection:** Automatic deviation detection triggers route recalculation with visual feedback.
 - **Traffic Progress Bar:** A bottom-of-screen indicator showing congestion levels along the active route (TruckersMP data).
 - **Route Overview:** One-tap zoom to view the full remaining route, then seamless return to follow mode.
+- **Spatial Grid Traffic Optimization:** Grid-based spatial hashing accelerates traffic point lookups during A* pathfinding, drastically improving routing performance on dense traffic data.
 - **Glassmorphism UI:** Translucent, backdrop-blurred interface elements with smooth transitions and a modern aesthetic.
+- **Multi-Language Support:** Full interface localization in English, German, and Thai, including route descriptions and voice guidance messages.
 
 ---
 

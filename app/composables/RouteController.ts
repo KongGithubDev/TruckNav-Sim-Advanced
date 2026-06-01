@@ -6,7 +6,7 @@ import {
     DEVIATION_THRESHOLD_SQ,
     getSquaredDist,
 } from "~/assets/utils/map/maths";
-import { useTrafficData } from "~/composables/useTrafficData";
+import { useTrafficData, calculateRouteTrafficInfo, type TrafficPoint } from "~/composables/useTrafficData";
 import {
     deleteMapLibreData,
     setMapLibreData,
@@ -14,7 +14,9 @@ import {
 import {
     generateDirectionsList,
     type DirectionStep,
+    type DirectionTranslations,
 } from "~/assets/utils/routing/directions";
+import { convertGeoToEts2, convertGeoToAts } from "~/assets/utils/map/converters";
 
 export const useRouteController = (
     map: Ref<maplibregl.Map | null>,
@@ -26,6 +28,7 @@ export const useRouteController = (
     const { getClosestNodes } = useGraphSystem();
     const { settings, activeSettings, updateGlobal, updateProfile } =
         useSettings();
+    const { t } = useTranslations();
 
     const currentRoutePath = shallowRef<[number, number][] | null>(null);
     const routeStatsCache = shallowRef<Float32Array | null>(null);
@@ -40,12 +43,23 @@ export const useRouteController = (
     const altRouteEta = ref<string>("");
     const altRouteDistance = ref<number>(0);
     const altRouteStats = ref<Float32Array | null>(null);
+    const altRouteTrafficDelay = ref<string>("");
     const hasAltRoute = computed(() => altRoutePath.value !== null);
 
     const savedDestination = ref<[number, number] | null>(null);
 
     const isRouteActive = ref(false);
     const isYardStart = ref(false);
+
+    // Route Selection Mode (choose between main and alt)
+    const routeSelectionMode = ref(false);
+    const selectionMainDistance = ref(0);
+    const selectionMainEta = ref("");
+    const selectionMainTrafficDelay = ref("");
+    const selectionAltDistance = ref(0);
+    const selectionAltEta = ref("");
+    const selectionAltTrafficDelay = ref("");
+    const selectionTimeDiff = ref({ minutes: 0, fasterLabel: "" }); // positive = alt slower, negative = alt faster
 
     const isTruckInYard = ref(false);
 
@@ -324,6 +338,7 @@ export const useRouteController = (
         ownedDlcs: number[],
         sdkScale: number,
         avgSpeed: number,
+        trafficPoints?: [number, number][],
     ): Promise<any> {
         return new Promise((resolve) => {
             if (!worker) {
@@ -353,6 +368,7 @@ export const useRouteController = (
                     selectedGame: settings.value.selectedGame,
                     sdkScale,
                     avgSpeed,
+                    trafficPoints: trafficPoints || undefined,
                 },
             });
         });
@@ -465,6 +481,7 @@ export const useRouteController = (
         projectedStartCoords: [number, number],
         sdkScale: number,
         avgSpeed: number,
+        trafficPoints?: [number, number][],
     ) {
         const SEARCH_RADII = [1, 2, 4, 8, 16, 32, 100, 300];
         const userDlcs = toRaw(activeSettings.value.ownedDlcs);
@@ -484,6 +501,7 @@ export const useRouteController = (
                 userDlcs,
                 sdkScale,
                 avgSpeed,
+                trafficPoints,
             );
 
             // Worker returns { main, alternative } - check that main route exists
@@ -537,6 +555,43 @@ export const useRouteController = (
         }
     }
 
+    function drawAltRouteOnMap(
+        coords: [number, number][],
+        trafficColors?: (string | null)[] | null,
+    ) {
+        if (!map.value) return;
+        const rawMap = toRaw(map.value);
+
+        if (!trafficColors || trafficColors.length !== coords.length - 1) {
+            // No traffic colors — draw as simple single line
+            setMapLibreData(rawMap, "alt-route-line", "LineString", toRaw(coords));
+            return;
+        }
+
+        // Draw as per-segment features with individual traffic colors
+        const features = [];
+        for (let i = 0; i < coords.length - 1; i++) {
+            const props: any = {};
+            if (trafficColors[i]) props.color = trafficColors[i];
+            features.push({
+                type: "Feature",
+                geometry: {
+                    type: "LineString",
+                    coordinates: [coords[i], coords[i + 1]],
+                },
+                properties: props,
+            });
+        }
+
+        const source = rawMap.getSource("alt-route-line") as maplibregl.GeoJSONSource;
+        if (source) {
+            source.setData({
+                type: "FeatureCollection",
+                features: features as any,
+            });
+        }
+    }
+
     function addDestinationMarker(coords: [number, number]) {
         if (!map.value) return;
         setMapLibreData(map.value, "destination-source", "Point", coords);
@@ -553,7 +608,7 @@ export const useRouteController = (
             map.value.addImage("destination-icon", pinImg, { pixelRatio: 2.5 });
         }
 
-        // Alt route layer (drawn first so it's behind)
+        // Alt route layer (drawn first so it's behind) — supports per-segment traffic colors
         map.value.addSource("alt-route-line", {
             type: "geojson",
             data: { type: "FeatureCollection", features: [] },
@@ -564,12 +619,12 @@ export const useRouteController = (
             source: "alt-route-line",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-                "line-color": "#6b7a8d",
+                "line-color": ["coalesce", ["get", "color"], "#6b7a8d"],
                 "line-width": [
                     "interpolate", ["linear"], ["zoom"],
-                    10, 6, 11.5, 8,
+                    10, 5, 11.5, 7,
                 ],
-                "line-opacity": 0.65,
+                "line-opacity": 0.7,
                 "line-dasharray": [2, 2],
             },
         }, "all-sprites");
@@ -763,6 +818,8 @@ export const useRouteController = (
     ) {
         if (adjacency.size === 0 || isCalculating.value || !isWorkerReady.value)
             return;
+        // Don't calculate a new route while in selection mode
+        if (routeSelectionMode.value) return;
 
         isCalculating.value = true;
         routeFound.value = null;
@@ -782,6 +839,14 @@ export const useRouteController = (
             }
             isYardStart.value = startConfig.type === "yard";
 
+            // Gather traffic points and convert from geo to game coordinates for traffic-aware routing
+            const { trafficPoints } = useTrafficData();
+            const isAts = settings.value.selectedGame === "ats";
+            const trafficCoords = (trafficPoints.value || [])
+                .map(pt => isAts
+                    ? convertGeoToAts(pt.coordinates[0], pt.coordinates[1])
+                    : convertGeoToEts2(pt.coordinates[0], pt.coordinates[1]));
+
             startNodeId.value = startConfig.toId;
             const result = await findFlexibleRoute(
                 startNodeId.value!,
@@ -791,14 +856,13 @@ export const useRouteController = (
                 startConfig.projectedCoords,
                 sdkScale,
                 avgSpeed,
+                trafficCoords,
             );
 
             // Worker returns { main, alternative } - extract main route
             const mainResult = result?.main ?? result;
 
             if (mainResult) {
-                isRouteActive.value = true;
-
                 endNodeId.value = mainResult.endId;
 
                 const frozenRawPath = Object.freeze(mainResult.displayPath);
@@ -817,7 +881,8 @@ export const useRouteController = (
                 routeDistance.value = Math.round(totalKm);
                 // Add Traffic Delay (convert in-game delay to real-world using current scale)
                 const { routeTrafficInfo } = useTrafficData();
-                const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60);
+                const trafficDelayMinutes = routeTrafficInfo.value?.trafficDelayMinutes || 0;
+                const trafficDelayInGameHours = trafficDelayMinutes / 60;
                 const trafficDelayRealHours = trafficDelayInGameHours / sdkScale;
                 const finalRealHours = totalRealHours + trafficDelayRealHours;
 
@@ -847,6 +912,20 @@ export const useRouteController = (
                     mainResult.sequenceManeuvers,
                     mainResult.sequenceExits,
                     nodeCoords,
+                    {
+                        headOnRoute: t('directions.headOnRoute'),
+                        turnLeft: t('directions.turnLeft'),
+                        turnRight: t('directions.turnRight'),
+                        keepLeft: t('directions.keepLeft'),
+                        keepRight: t('directions.keepRight'),
+                        takeExit: t('directions.takeExit'),
+                        exitAtRoundabout: t('directions.exitAtRoundabout'),
+                        roundaboutExit: (exitCount: number, suffix: string) =>
+                            t('directions.roundaboutExit')
+                                .replace('{number}', String(exitCount))
+                                .replace('{suffix}', suffix),
+                        arrived: t('directions.arrived'),
+                    },
                 );
 
                 if (fullRouteDirections.value.length > 1) {
@@ -862,14 +941,6 @@ export const useRouteController = (
                     nextTurnDistance.value = 0;
                 }
 
-                if (activeSettings.value.hasTurnNavigation) {
-                    drawTurnArrows(
-                        fullRouteDirections.value,
-                        mainResult.displayPath,
-                    );
-                }
-
-                routeFound.value = true;
                 currentRouteIndex.value = 0;
                 updateProfile("lastDestination", savedDestination.value);
 
@@ -880,28 +951,80 @@ export const useRouteController = (
                 altRouteStats.value = null;
 
                 const altData = result?.alternative;
-                if (altData && altData.displayPath && altData.stats) {
+                const hasMeaningfulAlt = altData && altData.displayPath && altData.stats && (() => {
+                    const altLastIdx = (altData.rawPath.length - 1) * 2;
+                    const altKm: number = altData.stats[altLastIdx] ?? 0;
+                    const primaryKm = routeDistance.value;
+                    const kmDiff = Math.abs(altKm - primaryKm);
+                    const pctDiff = primaryKm > 0 ? kmDiff / primaryKm : 0;
+                    return kmDiff > 5 || pctDiff > 0.1;
+                })();
+
+                if (hasMeaningfulAlt) {
+                    // Store alt route data
                     const altLastIdx = (altData.rawPath.length - 1) * 2;
                     const altKm: number = altData.stats[altLastIdx] ?? 0;
                     const altRealHours: number = altData.stats[altLastIdx + 1] ?? 0;
-                    const primaryKm = routeDistance.value;
 
-                    // Only show alt route if it meaningfully differs (>5km or >10% different)
-                    const kmDiff = Math.abs(altKm - primaryKm);
-                    const pctDiff = primaryKm > 0 ? kmDiff / primaryKm : 0;
+                    altRoutePath.value = altData.displayPath;
+                    altRouteDistance.value = Math.round(altKm);
+                    altRouteStats.value = altData.stats;
 
-                    if (kmDiff > 5 || pctDiff > 0.1) {
-                        altRoutePath.value = altData.displayPath;
-                        altRouteDistance.value = Math.round(altKm);
-                        altRouteStats.value = altData.stats;
+                    const aH = Math.floor(altRealHours);
+                    const aM = Math.round((altRealHours - aH) * 60);
+                    altRouteEta.value = `${aH}h ${aM}min`;
 
-                        const aH = Math.floor(altRealHours);
-                        const aM = Math.round((altRealHours - aH) * 60);
-                        altRouteEta.value = `${aH}h ${aM}min`;
+                    // Compute traffic info for alt route: both visualization colors and delay estimate
+                    const { trafficPoints } = useTrafficData();
+                    const tp = trafficPoints.value || [];
+                    const altTrafficInfo = altData.displayPath ? calculateRouteTrafficInfo(tp, altData.displayPath) : null;
+                    
+                    // Draw alt route with traffic congestion colors
+                    drawAltRouteOnMap(altData.displayPath, altTrafficInfo?.routeColors);
 
-                        if (map.value) {
-                            setMapLibreData(map.value, "alt-route-line", "LineString", altData.displayPath);
-                        }
+                    // Main route traffic delay (from existing polling data) — uses granular weighted sum
+                    const mainTrafficInfo = routeTrafficInfo.value;
+                    const mainDelayMin = mainTrafficInfo ? Math.round(mainTrafficInfo.trafficDelayMinutes / sdkScale) : 0;
+                    selectionMainTrafficDelay.value = mainDelayMin > 0 ? `+${mainDelayMin}m` : "";
+                    
+                    // Alt route traffic delay (for both selection card and post-selection alt card) — uses granular weighted sum
+                    const altDelayMin = altTrafficInfo ? Math.round(altTrafficInfo.trafficDelayMinutes / sdkScale) : 0;
+                    selectionAltTrafficDelay.value = altDelayMin > 0 ? `+${altDelayMin}m` : "";
+                    altRouteTrafficDelay.value = altDelayMin > 0 ? `+${altDelayMin}m` : "";
+
+                    // Compute time difference for the comparison badge
+                    const mainTotalMin = totalRealHours * 60 + mainDelayMin;
+                    const altTotalMin = altRealHours * 60 + altDelayMin;
+                    const diffMin = Math.round(altTotalMin - mainTotalMin);
+                    if (Math.abs(diffMin) >= 1) {
+                        selectionTimeDiff.value = {
+                            minutes: Math.abs(diffMin),
+                            fasterLabel: diffMin < 0 ? 'alt' : 'main',
+                        };
+                    } else {
+                        selectionTimeDiff.value = { minutes: 0, fasterLabel: '' };
+                    }
+
+                    // Store selection info for UI
+                    selectionMainDistance.value = routeDistance.value;
+                    selectionMainEta.value = routeEta.value;
+                    selectionAltDistance.value = altRouteDistance.value;
+                    selectionAltEta.value = altRouteEta.value;
+
+                    // Show route selection card instead of activating immediately
+                    routeSelectionMode.value = true;
+                    routeFound.value = null; // Don't show notification yet
+                    // isRouteActive stays false - sheet won't appear yet
+                } else {
+                    // No meaningful alternative - activate main route immediately
+                    isRouteActive.value = true;
+                    routeFound.value = true;
+
+                    if (activeSettings.value.hasTurnNavigation) {
+                        drawTurnArrows(
+                            fullRouteDirections.value,
+                            mainResult.displayPath,
+                        );
                     }
                 }
             } else {
@@ -985,9 +1108,10 @@ export const useRouteController = (
             // Blend the original ETA (real-world from cache) with dynamic real-world ETA
             const blendedHours = (dynamicRealHours + remRealHours) / 2;
 
-            // Add Traffic Delay (convert in-game to real-world)
+            // Add Traffic Delay (convert in-game to real-world) — uses granular weighted sum
             const { routeTrafficInfo } = useTrafficData();
-            const trafficDelayInGameHours = (routeTrafficInfo.value?.congestedSegments || 0) * (5 / 60);
+            const trafficDelayMinutes = routeTrafficInfo.value?.trafficDelayMinutes || 0;
+            const trafficDelayInGameHours = trafficDelayMinutes / 60;
             const trafficDelayRealHours = trafficDelayInGameHours / sdkScale;
             const finalRealHours = blendedHours + trafficDelayRealHours;
             
@@ -1099,23 +1223,77 @@ export const useRouteController = (
         if (!map.value) return;
 
         deleteMapLibreData(map.value, "route-line");
+        deleteMapLibreData(map.value, "alt-route-line");
         deleteMapLibreData(map.value, "destination-source");
         deleteMapLibreData(map.value, "turn-arrows-line-source");
         deleteMapLibreData(map.value, "turn-arrows-head-source");
 
         isRouteActive.value = false;
+        routeSelectionMode.value = false;
         endNodeId.value = null;
         currentRoutePath.value = null;
         savedDestination.value = null;
         isYardStart.value = false;
-        fullRouteDirections.value = [];
+        fullRouteDirections.value = [];            altRoutePath.value = null;
+        altRouteEta.value = "";
+        altRouteDistance.value = 0;
         altRouteStats.value = null;
+        altRouteTrafficDelay.value = "";
         updateProfile("lastDestination", null);
         stopNavigationMode();
 
         nextTurnDistance.value = 0;
         lastMathPos.value = null;
     }
+
+        function confirmSelectedRoute(index: 0 | 1) {
+            if (index === 1 && altRoutePath.value) {
+                // User chose the alt route - swap alt to main
+                // Keep original main as new alt
+                const oldMainPath = currentRoutePath.value;
+                const oldMainDist = routeDistance.value;
+                const oldMainEta = routeEta.value;
+                const oldMainStats = routeStatsCache.value;
+
+                // Make alt the new main
+                currentRoutePath.value = altRoutePath.value;
+                routeDistance.value = altRouteDistance.value;
+                routeEta.value = altRouteEta.value;
+                routeStatsCache.value = altRouteStats.value;
+
+                // Old main becomes new alt — compute its traffic delay
+                const { trafficPoints } = useTrafficData();
+                const tp = trafficPoints.value || [];
+                if (oldMainPath) {
+                    const oldMainTrafficInfo = calculateRouteTrafficInfo(tp, oldMainPath);
+                    const oldMainDelayMin = oldMainTrafficInfo ? Math.round(oldMainTrafficInfo.trafficDelayMinutes / (settings.value.selectedGame === "ats" ? 20 : 19)) : 0;
+                    altRouteTrafficDelay.value = oldMainDelayMin > 0 ? `+${oldMainDelayMin}m` : "";
+                } else {
+                    altRouteTrafficDelay.value = "";
+                }
+
+                altRoutePath.value = oldMainPath as any;
+                altRouteDistance.value = oldMainDist;
+                altRouteEta.value = oldMainEta;
+                altRouteStats.value = oldMainStats as any;
+
+                // Redraw routes on map
+                if (map.value) {
+                    setMapLibreData(map.value, "route-line", "LineString", currentRoutePath.value, { color: activeSettings.value.routeColor });
+                    setMapLibreData(map.value, "alt-route-line", "LineString", altRoutePath.value);
+                }
+            }
+
+            // Draw turn arrows for the now-selected main route
+            if (activeSettings.value.hasTurnNavigation && fullRouteDirections.value.length > 0 && currentRoutePath.value) {
+                drawTurnArrows(fullRouteDirections.value, currentRoutePath.value);
+            }
+
+            // Activate route
+            isRouteActive.value = true;
+            routeFound.value = true;
+            routeSelectionMode.value = false;
+        }
 
         function swapToAltRoute() {
             if (!altRoutePath.value || !map.value) return;
@@ -1154,11 +1332,21 @@ export const useRouteController = (
             altRoutePath,
             altRouteEta,
             altRouteDistance,
+            altRouteTrafficDelay,
             hasAltRoute,
             isWorkerReady,
             isRouteActive,
             fullRouteDirections,
             nextTurnDistance,
+            routeSelectionMode,
+            selectionMainDistance,
+            selectionMainEta,
+            selectionMainTrafficDelay,
+            selectionAltDistance,
+            selectionAltEta,
+            selectionAltTrafficDelay,
+            selectionTimeDiff,
+            confirmSelectedRoute,
             initWorkerData,
             destroyWorker,
             setupRouteLayer,

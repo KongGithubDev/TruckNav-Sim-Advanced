@@ -26,8 +26,9 @@ export interface TrafficPoint {
 export interface RouteTrafficInfo {
     averageDensity: number;
     totalPlayers: number;
-    congestedSegments: number;
+    congestedSegments: number; // Kept for route coloring, but delay uses weighted sum
     routeColors: string[]; // Colors for each segment of the route
+    trafficDelayMinutes: number; // Gradual traffic delay in in-game minutes
 }
 
 
@@ -81,7 +82,7 @@ function distanceToSegment(
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-function calculateRouteTrafficInfo(
+export function calculateRouteTrafficInfo(
     points: TrafficPoint[],
     routePath: [number, number][],
     radius = 0.025 // ~2.5km radius per sample point
@@ -90,9 +91,20 @@ function calculateRouteTrafficInfo(
 
     const SAMPLE_STEP = 15; // Sample every 15 route points (~750m at 50m/point)
     const totalSegments = routePath.length - 1;
-    const routeColors: string[] = new Array(totalSegments).fill(null);
-    let totalPlayersOnRoute = 0;
+    const routeColors: string[] = new Array(totalSegments).fill(null);        let totalPlayersOnRoute = 0;
     let congestedSegmentsCount = 0;
+    let cumulativeDelayMin = 0;
+
+    // Gradual delay function based on player density per sample (~750m stretch)
+    // Light (2-4):  0.3–0.9 min    — slight slowdown
+    // Medium (5-11): 1.5–5.1 min   — significant slowdown
+    // Heavy (≥12):   6.1+ min       — stop-and-go
+    function sampleDelayMinutes(playerCount: number): number {
+        if (playerCount <= 1) return 0;
+        if (playerCount <= 4) return (playerCount - 1) * 0.3;
+        if (playerCount <= 11) return 0.9 + (playerCount - 4) * 0.6;
+        return 5.1 + (playerCount - 11) * 1.0;
+    }
 
     // Sample route at intervals and paint surrounding segments
     for (let s = 0; s < totalSegments; s += SAMPLE_STEP) {
@@ -107,6 +119,9 @@ function calculateRouteTrafficInfo(
                 playersNear++;
             }
         }
+
+        // Accumulate gradual delay (continuous, not binary)
+        cumulativeDelayMin += sampleDelayMinutes(playersNear);
 
         // Determine color for this chunk
         let color: string | null = null;
@@ -133,6 +148,7 @@ function calculateRouteTrafficInfo(
         totalPlayers: totalPlayersOnRoute,
         congestedSegments: congestedSegmentsCount,
         routeColors,
+        trafficDelayMinutes: Math.round(cumulativeDelayMin * 10) / 10, // Round to 1 decimal
     };
 
 }

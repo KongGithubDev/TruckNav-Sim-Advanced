@@ -102,6 +102,66 @@ function fastDistKm(
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+const TRAFFIC_CHECK_RADIUS = 0.5;
+const TRAFFIC_CHECK_RADIUS_SQ = TRAFFIC_CHECK_RADIUS * TRAFFIC_CHECK_RADIUS;
+const TRAFFIC_PENALTY_PER_POINT = 300;
+
+/**
+ * Spatial grid index for efficient traffic point lookups.
+ * Groups points into cells of size TRAFFIC_CHECK_RADIUS so we only
+ * check points in nearby cells instead of all points for each edge.
+ */
+function buildTrafficGrid(trafficPoints: [number, number][]): Map<string, [number, number][]> {
+    const grid = new Map<string, [number, number][]>();
+    const cellSize = TRAFFIC_CHECK_RADIUS;
+    for (let t = 0; t < trafficPoints.length; t++) {
+        const tp = trafficPoints[t]!;
+        const cx = Math.floor(tp[0] / cellSize);
+        const cy = Math.floor(tp[1] / cellSize);
+        const key = `${cx},${cy}`;
+        let cell = grid.get(key);
+        if (!cell) {
+            cell = [];
+            grid.set(key, cell);
+        }
+        cell.push(tp);
+    }
+    return grid;
+}
+
+/**
+ * Given a spatial grid and a position (mx, my), returns the number of
+ * traffic points within TRAFFIC_CHECK_RADIUS of that position, up to 3.
+ */
+function countTrafficNearby(
+    grid: Map<string, [number, number][]>,
+    mx: number,
+    my: number,
+): number {
+    const cellSize = TRAFFIC_CHECK_RADIUS;
+    const cx = Math.floor(mx / cellSize);
+    const cy = Math.floor(my / cellSize);
+    let count = 0;
+    // Check the 3x3 block of cells centered on (cx, cy)
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            const key = `${cx + dx},${cy + dy}`;
+            const cell = grid.get(key);
+            if (!cell) continue;
+            for (let t = 0; t < cell.length; t++) {
+                const tp = cell[t]!;
+                const ddx = mx - tp[0];
+                const ddy = my - tp[1];
+                if (ddx * ddx + ddy * ddy < TRAFFIC_CHECK_RADIUS_SQ) {
+                    count++;
+                    if (count >= 3) return count;
+                }
+            }
+        }
+    }
+    return count;
+}
+
 export const calculateRoute = (
     start: number,
     possibleEnds: Set<number | undefined>,
@@ -112,11 +172,16 @@ export const calculateRoute = (
     ownedDlcs: number[],
     targetLocation?: [number, number],
     excludedEdges?: Set<number>,
+    trafficPoints?: [number, number][],
 ): {
     path: [number, number][];
     nodeSequence: number[];
     endId: number;
 } | null => {
+    // Build spatial grid once for the entire A* search
+    const trafficGrid = trafficPoints && trafficPoints.length > 0
+        ? buildTrafficGrid(trafficPoints)
+        : null;
     ensureCoordCache(nodeCoords);
     ensureEdgesMapped(adjacency);
 
@@ -257,6 +322,18 @@ export const calculateRoute = (
                         else if (diff > 1.0) stepCost += 1000;
                         else if (diff > 0.4) stepCost += 500;
                     }
+                }
+            }
+
+            // Traffic penalty for alternative route (spatial-grid accelerated)
+            if (trafficGrid && !edge.isFerry) {
+                const nLng = flatCoords[neighborNodeId * 2]!;
+                const nLat = flatCoords[neighborNodeId * 2 + 1]!;
+                const midLng = (cLng + nLng) * 0.5;
+                const midLat = (cLat + nLat) * 0.5;
+                const trafficCount = countTrafficNearby(trafficGrid, midLng, midLat);
+                if (trafficCount > 0) {
+                    stepCost += trafficCount * TRAFFIC_PENALTY_PER_POINT;
                 }
             }
 

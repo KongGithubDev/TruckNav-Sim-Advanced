@@ -67,7 +67,9 @@
     "notifications": {
         "locatingRoute": "กำลังค้นหาเส้นทาง",
         "noRouteAvailable": "ไม่พบเส้นทาง",
-        "routeFound": "พบเส้นทางแล้ว"
+        "routeFound": "พบเส้นทางแล้ว",
+        "rerouting": "กำลังหาเส้นทางใหม่...",
+        "reroutingSubtext": "กำลังค้นหาเส้นทางอื่น"
     },
     "settings": {
         "appFont": "ฟอนต์แอป",
@@ -97,7 +99,7 @@
         "textTheme": "ธีมตัวอักษร",
         "theme": "ธีม",
         "title": "การตั้งค่า",
-        "traffic": "ชั้นจราจร (Truckersmp)",
+        "traffic": "ชั้นจราจร (TruckersMP)",
         "trafficServer": "เซิร์ฟเวอร์จราจร",
         "truckMarkerSize": "ขนาดไอคอนรถบรรทุก",
         "units": "หน่วยวัด",
@@ -121,5 +123,31 @@
         "speedTitle": "ความเร็ว",
         "topBarDescription": "ซ่อนแถบด้านบนทั้งหมดพร้อมข้อมูลการขับขี่",
         "topBarTitle": "แถบด้านบน"
+    },
+    "warnings": {
+        "speedLimitExceeded": "คำเตือน คุณขับรถเร็วเกินไป",
+        "trafficAhead": "การจราจรข้างหน้า คาดว่าล่าช้า {delay} นาที",
+        "testVoice": "นี่คือข้อความทดสอบเสียง หากคุณได้ยินแสดงว่าเสียงของคุณทำงานได้"
+    },
+    "directions": {
+        "headOnRoute": "เริ่มเส้นทาง",
+        "turnLeft": "เลี้ยวซ้าย",
+        "turnRight": "เลี้ยวขวา",
+        "keepLeft": "ชิดซ้าย",
+        "keepRight": "ชิดขวา",
+        "takeExit": "ออกทางออก",
+        "exitAtRoundabout": "ออกที่วงเวียน",
+        "roundaboutExit": "ทางออกที่ {number}",
+        "arrived": "ถึงที่หมาย"
+    },
+    "routeSelection": {
+        "title": "เลือกเส้นทาง",
+        "fastest": "เส้นทางไวที่สุด",
+        "alternative": "เส้นทางปกติ",
+        "cancel": "ยกเลิก",
+
+        "fastDesc": "ถึงเร็วที่สุด",
+        "altDesc": "หลีกเลี่ยงการจราจร",
+        "timeDiff": "เร็วกว่า {min} นาที"
     }
 }

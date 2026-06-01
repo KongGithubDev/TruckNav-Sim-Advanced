@@ -115,7 +115,17 @@ const {
     redrawRouteWithTraffic,
     hasAltRoute,
     altRouteEta,
+    altRouteTrafficDelay,
     swapToAltRoute,
+    routeSelectionMode,
+    selectionMainDistance,
+    selectionMainEta,
+    selectionMainTrafficDelay,
+    selectionAltDistance,
+    selectionAltEta,
+    selectionAltTrafficDelay,
+    selectionTimeDiff,
+    confirmSelectedRoute,
 } = useRouteController(map, adjacency, nodeCoords, stopNavigationMode);
 
 //
@@ -181,9 +191,10 @@ const {
 watch(routeTrafficInfo, (info) => {
     if (!info || !activeSettings.value.voiceWarnings) return;
     const segments = info.congestedSegments || 0;
+    const delayMin = Math.round(info.trafficDelayMinutes || 0);
     if (segments > 0 && segments > lastCongestedSegments) {
-        const delayMin = segments * 5;
-        speakWarning('traffic_ahead', `Traffic ahead – expect a ${delayMin}-minute delay`, 120);
+        const msg = t('warnings.trafficAhead').replace('{delay}', String(delayMin));
+        speakWarning('traffic_ahead', msg, 120);
     }
     lastCongestedSegments = segments;
 });
@@ -787,6 +798,99 @@ const onCancelRoute = () => {
                         </button>
                     </Transition>
 
+                    <!-- Route Selection Card (choose between fast vs alt) -->
+                    <Transition name="route-select-pop">
+                        <div
+                            v-if="routeSelectionMode"
+                            class="route-selection-overlay"
+                        >
+                            <div class="route-selection-card">
+                                <div class="route-selection-header">
+                                    <div class="header-icon-wrap">
+                                        <Icon name="lucide:route" size="16" />
+                                    </div>
+                                    <span>{{ t('routeSelection.title') }}</span>
+                                </div>
+                                <div class="route-options">
+                                    <div
+                                        class="route-option route-option-primary"
+                                        @click="confirmSelectedRoute(0)"
+                                        tabindex="0"
+                                        role="button"
+                                        @keydown.enter="confirmSelectedRoute(0)"
+                                        @keydown.space.prevent="confirmSelectedRoute(0)"
+                                    >
+                                        <div class="route-option-row">
+                                            <div class="route-badge route-badge-fast">
+                                                <Icon name="lucide:zap" size="14" />
+                                            </div>
+                                            <div class="route-option-info">
+                                                <div class="route-option-top">
+                                                    <span class="route-option-label">{{ t('routeSelection.fastest') }}</span>
+                                                    <span class="route-option-desc">{{ t('routeSelection.fastDesc') }}</span>
+                                                </div>
+                                                <div class="route-option-stats">
+                                                    <span class="stat-eta">{{ selectionMainEta }}</span>
+                                                    <span class="stat-sep">·</span>
+                                                    <span class="stat-dist">{{ selectionMainDistance }}km</span>
+                                                    <span v-if="selectionMainTrafficDelay" class="traffic-delay-badge">
+                                                        <Icon name="lucide:alert-triangle" size="10" />
+                                                        {{ selectionMainTrafficDelay }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-if="selectionTimeDiff.fasterLabel === 'main' && selectionTimeDiff.minutes > 0" class="time-diff-badge time-diff-faster">
+                                            <Icon name="lucide:trending-down" size="12" />
+                                            {{ t('routeSelection.timeDiff').replace('{min}', String(selectionTimeDiff.minutes)) }}
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="route-option route-option-alt"
+                                        @click="confirmSelectedRoute(1)"
+                                        tabindex="0"
+                                        role="button"
+                                        @keydown.enter="confirmSelectedRoute(1)"
+                                        @keydown.space.prevent="confirmSelectedRoute(1)"
+                                    >
+                                        <div class="route-option-row">
+                                            <div class="route-badge route-badge-alt">
+                                                <Icon name="lucide:git-branch" size="14" />
+                                            </div>
+                                            <div class="route-option-info">
+                                                <div class="route-option-top">
+                                                    <span class="route-option-label">{{ t('routeSelection.alternative') }}</span>
+                                                    <span class="route-option-desc">{{ t('routeSelection.altDesc') }}</span>
+                                                </div>
+                                                <div class="route-option-stats">
+                                                    <span class="stat-eta">{{ selectionAltEta }}</span>
+                                                    <span class="stat-sep">·</span>
+                                                    <span class="stat-dist">{{ selectionAltDistance }}km</span>
+                                                    <span v-if="selectionAltTrafficDelay" class="traffic-delay-badge traffic-delay-badge-alt">
+                                                        <Icon name="lucide:alert-triangle" size="10" />
+                                                        {{ selectionAltTrafficDelay }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-if="selectionTimeDiff.fasterLabel === 'alt' && selectionTimeDiff.minutes > 0" class="time-diff-badge time-diff-faster">
+                                            <Icon name="lucide:trending-down" size="12" />
+                                            {{ t('routeSelection.timeDiff').replace('{min}', String(selectionTimeDiff.minutes)) }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    class="route-cancel-btn"
+                                    @click="clearRouteState"
+                                >
+                                    <Icon name="lucide:x" size="14" />
+                                    {{ t('routeSelection.cancel') }}
+                                </button>
+                            </div>
+                        </div>
+                    </Transition>
+
+                    <!-- Alt Route Swap Card (after route is active) -->
                     <Transition name="resume-pop">
                         <div
                             v-if="hasAltRoute && isRouteActive"
@@ -795,8 +899,12 @@ const onCancelRoute = () => {
                         >
                             <Icon name="lucide:git-branch" class="alt-icon" />
                             <div class="alt-text-container">
-                                <span class="alt-label">Alternative</span>
+                                <span class="alt-label">{{ t('routeSelection.alternative') }}</span>
                                 <span class="alt-time">{{ altRouteEta }}</span>
+                                <span v-if="altRouteTrafficDelay" class="alt-traffic-badge">
+                                    <Icon name="lucide:alert-triangle" size="10" />
+                                    {{ altRouteTrafficDelay }}
+                                </span>
                             </div>
                         </div>
                     </Transition>

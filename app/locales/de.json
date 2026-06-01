@@ -99,7 +99,7 @@
         "textTheme": "Text Design",
         "theme": "Design",
         "title": "Einstellungen",
-        "traffic": "Verkehrsschicht (Truckersmp)",
+        "traffic": "Verkehrsschicht (TruckersMP)",
         "trafficServer": "Verkehrsserver",
         "truckMarkerSize": "Truck Marker Größe",
         "units": "Einheiten",
@@ -123,5 +123,31 @@
         "speedTitle": "Geschwindigkeit",
         "topBarDescription": "Blendet die komplette obere Leiste mit Fahrinfos aus.",
         "topBarTitle": "Obere Leiste"
+    },
+    "warnings": {
+        "speedLimitExceeded": "Warnung, Geschwindigkeitsüberschreitung",
+        "trafficAhead": "Verkehrsstau voraus – mit {delay} Minuten Verzögerung rechnen",
+        "testVoice": "Dies ist eine Test-Sprachnachricht. Wenn Sie dies hören, funktioniert Ihre Stimme."
+    },
+    "directions": {
+        "headOnRoute": "Route beginnen",
+        "turnLeft": "Links abbiegen",
+        "turnRight": "Rechts abbiegen",
+        "keepLeft": "Links halten",
+        "keepRight": "Rechts halten",
+        "takeExit": "Ausfahrt nehmen",
+        "exitAtRoundabout": "am Kreisverkehr ausfahren",
+        "roundaboutExit": "{number}. Ausfahrt",
+        "arrived": "Angekommen"
+    },
+    "routeSelection": {
+        "title": "Route wählen",
+        "fastest": "Schnellste",
+        "alternative": "Alternative",
+        "cancel": "Abbrechen",
+
+        "fastDesc": "Schnellste Ankunft",
+        "altDesc": "Vermeidet Stau",
+        "timeDiff": "{min} Min. schneller"
     }
 }

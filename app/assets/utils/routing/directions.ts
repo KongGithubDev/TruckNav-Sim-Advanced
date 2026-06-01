@@ -24,12 +24,25 @@ export interface DirectionStep {
     exitCumulativeKm?: number;
 }
 
+export interface DirectionTranslations {
+    headOnRoute: string;
+    turnLeft: string;
+    turnRight: string;
+    keepLeft: string;
+    keepRight: string;
+    takeExit: string;
+    exitAtRoundabout: string;
+    roundaboutExit: (exitCount: number, ordinalSuffix: string) => string;
+    arrived: string;
+}
+
 export function generateDirectionsList(
     nodeSequence: number[],
     nodeKms: Float32Array,
     sequenceManeuvers: Int8Array,
     sequenceExits: Int8Array,
     nodeCoords: Map<number, [number, number]>,
+    tr?: DirectionTranslations,
 ): DirectionStep[] {
     const steps: DirectionStep[] = [];
     if (nodeSequence.length < 2) return steps;
@@ -37,7 +50,7 @@ export function generateDirectionsList(
     steps.push({
         id: 0,
         type: "depart",
-        text: "Head on Route",
+        text: tr?.headOnRoute ?? "Head on Route",
         distance: 0,
         coords: nodeCoords.get(nodeSequence[0]!) || [0, 0],
     });
@@ -65,11 +78,11 @@ export function generateDirectionsList(
             switch (maneuver) {
                 case 1:
                     turnType = "left";
-                    turnText = "Turn left";
+                    turnText = tr?.turnLeft ?? "Turn left";
                     break;
                 case 2:
                     turnType = "right";
-                    turnText = "Turn right";
+                    turnText = tr?.turnRight ?? "Turn right";
                     break;
                 case 3: {
                     turnType = "roundabout";
@@ -82,23 +95,25 @@ export function generateDirectionsList(
                                   : exitCount === 3
                                     ? "rd"
                                     : "th";
-                        turnText = `${exitCount}${suffix} exit`;
+                        turnText = tr
+                            ? tr.roundaboutExit(exitCount, suffix)
+                            : `${exitCount}${suffix} exit`;
                     } else {
-                        turnText = `exit at the roundabout`;
+                        turnText = tr?.exitAtRoundabout ?? "exit at the roundabout";
                     }
                     break;
                 }
                 case 5:
                     turnType = "exit-highway";
-                    turnText = "Take the exit";
+                    turnText = tr?.takeExit ?? "Take the exit";
                     break;
                 case 6:
                     turnType = "slight-left";
-                    turnText = "Keep left";
+                    turnText = tr?.keepLeft ?? "Keep left";
                     break;
                 case 7:
                     turnType = "slight-right";
-                    turnText = "Keep right";
+                    turnText = tr?.keepRight ?? "Keep right";
                     break;
             }
 
@@ -126,7 +141,7 @@ export function generateDirectionsList(
     steps.push({
         id: nodeSequence[nodeSequence.length - 1]!,
         type: "destination",
-        text: "Arrived",
+        text: tr?.arrived ?? "Arrived",
         distance: 0,
         coords: nodeCoords.get(nodeSequence[nodeSequence.length - 1]!) || [
             0, 0,
