@@ -14,13 +14,13 @@ jobs:
                   -X POST \
                   -d '{
                     "username": "TruckNavAdvanced Milestones",
-                    "avatar_url": "https://raw.githubusercontent.com/Rares-Muntean/TruckNav-Sim/master/public/icon.png",
+                    "avatar_url": "https://raw.githubusercontent.com/KongGithubDev/TruckNav-Sim-Advanced/master/public/icon.png",
                     "embeds": [{
                       "title": "⭐ New Driver in the Fleet! ⭐",
-                      "description": "[**${{ github.actor }}**](https://github.com/${{ github.actor }}) just starred the repo!\n\nThank you for supporting **TruckNavAdvanced-Sim**.\nWe are now at **${{ github.event.repository.stargazers_count }}** stars. 🛣️",
+                      "description": "[**${{ github.actor }}**](https://github.com/${{ github.actor }}) just starred the repo!\n\nThank you for supporting **TruckNav-Sim-Advanced**.\nWe are now at **${{ github.event.repository.stargazers_count }}** stars. 🛣️",
                       "color": 3447003,
                       "thumbnail": { "url": "${{ github.event.sender.avatar_url }}" },
-                      "footer": { "text": "TruckNavAdvanced-Sim Community Hub" }
+                      "footer": { "text": "TruckNav-Sim-Advanced Community Hub" }
                     }]
                   }' \
                   ${{ secrets.DISCORD_WEBHOOK }}

@@ -104,7 +104,7 @@ function createDefaultSettings(): AppSettingsState {
     };
 }
 
-const STORAGE_KEY = "truck-nav-settings";
+const STORAGE_KEY = "truck-nav-advanced-settings";
 
 const DEFAULT_SETTINGS: AppSettingsState = createDefaultSettings();
 
