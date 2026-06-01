@@ -5,10 +5,10 @@ android {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         noCompress "pmtiles", "mp3"
     }
-    namespace = "com.munteanrares.ets2gps"
+    namespace = "com.trucknavadvanced.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.munteanrares.ets2gps"
+        applicationId "com.trucknavadvanced.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

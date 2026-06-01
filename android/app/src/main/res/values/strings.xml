@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">TruckNavAdvanced</string>
     <string name="title_activity_main">TruckNavAdvanced</string>
-    <string name="package_name">com.raresmuntean.trucknav</string>
-    <string name="custom_url_scheme">com.raresmuntean.trucknav</string>
+    <string name="package_name">com.trucknavadvanced.app</string>
+    <string name="custom_url_scheme">com.trucknavadvanced.app</string>
 </resources>

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-    appId: "com.munteanrares.ets2gps",
+    appId: "com.trucknavadvanced.app",
     appName: "TruckNavAdvanced",
     webDir: ".output/public",
     server: { androidScheme: "http" },

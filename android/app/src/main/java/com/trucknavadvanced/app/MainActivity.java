@@ -1,4 +1,4 @@
-package com.munteanrares.ets2gps;
+package com.trucknavadvanced.app;
 
 import android.os.Bundle;
 import android.view.View;
