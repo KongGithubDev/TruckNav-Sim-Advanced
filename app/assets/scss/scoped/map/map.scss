@@ -1,12 +1,12 @@
-//
-//
-//
-// ----------------------> MAP <----------------------
+// ═══════════════════════════════════════════
+//   MAP UI — REFINED COLOR SCHEME v0.1.1
+// ═══════════════════════════════════════════
+
+// ── Map container ──
 .map-container {
     width: 100vw;
     height: 100dvh;
-
-    background-color: #272d39;
+    background-color: $bg-dark;
     touch-action: none;
 }
 
@@ -19,12 +19,12 @@
     transition: filter 2s ease-in-out;
 }
 
+// ── UI safe area ──
 .ui-safe-container {
     position: absolute;
     top: 0;
     left: 0;
     width: 100vw;
-
     height: calc(100dvh - env(safe-area-inset-top));
     pointer-events: none;
     z-index: 10;
@@ -39,11 +39,11 @@
     position: fixed;
 }
 
+// ── Navigation buttons ──
 .left-buttons {
     position: absolute;
     top: calc($game-info-bar-height + 1.8rem);
     left: 10px;
-
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -57,7 +57,6 @@
     position: absolute;
     top: calc($game-info-bar-height + 1.8rem);
     right: 10px;
-
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
@@ -69,17 +68,16 @@
     .red-icon {
         color: $red-color;
     }
-
     .green-icon {
         color: $green-color;
     }
 }
 
+// ── Warnings area ──
 .warnings {
     position: absolute;
     bottom: calc(30px + $game-info-bar-height);
     right: -2px;
-
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -91,6 +89,7 @@
     height: var(--hud-btn-size);
 }
 
+// ── Resume navigation button ──
 .resume-navigation-btn {
     position: absolute;
     bottom: 220px;
@@ -101,18 +100,24 @@
     gap: 8px;
     padding: 12px 24px;
     border-radius: 50px;
-    background: #1a73e8;
+    background: var(--theme-color);
     color: #fff;
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    box-shadow: 0 4px 20px rgba(26, 115, 232, 0.5);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 20px color-mix(in srgb, var(--theme-color) 30%, transparent);
     cursor: pointer;
     z-index: 200;
     transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    font-family: inherit;
 
     &:hover {
-        box-shadow: 0 6px 28px rgba(26, 115, 232, 0.7);
+        box-shadow:
+            0 6px 28px rgba(0, 0, 0, 0.4),
+            0 0 30px color-mix(in srgb, var(--theme-color) 40%, transparent);
         transform: translateX(-50%) scale(1.04);
     }
 
@@ -131,10 +136,10 @@
     transform: translateX(-50%) translateY(20px) scale(0.9);
 }
 
-//
-//
-//
-// ----------------------> ROUTE SELECTION CARD <----------------------
+// ═══════════════════════════════════════════
+//   ROUTE SELECTION CARD
+// ═══════════════════════════════════════════
+
 .route-selection-overlay {
     position: absolute;
     bottom: 120px;
@@ -146,10 +151,10 @@
 }
 
 .route-selection-card {
-    background: rgba(22, 30, 45, 0.94);
+    background: $glass-bg-heavy;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid $glass-border-strong;
     border-radius: 18px;
     padding: 18px 20px;
     box-shadow:
@@ -176,21 +181,21 @@
     gap: 10px;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #e0e6ed;
+    color: $white-font-text;
     letter-spacing: 0.01em;
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid $glass-border;
 
     .header-icon-wrap {
         width: 30px;
         height: 30px;
         border-radius: 8px;
-        background: rgba(26, 115, 232, 0.2);
+        background: rgba($blue-color, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64b5f6;
+        color: $blue-color;
     }
 }
 
@@ -204,45 +209,41 @@
     border-radius: 14px;
     padding: 14px 16px;
     cursor: pointer;
-    transition:
-        background 0.2s ease,
-        transform 0.15s ease,
-        box-shadow 0.2s ease;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
     border: 1px solid transparent;
     outline: none;
 
     &:focus-visible {
-        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.5);
+        box-shadow: 0 0 0 2px var(--theme-color);
     }
 
     &:hover {
         transform: scale(1.02);
     }
-
     &:active {
         transform: scale(0.97);
     }
 }
 
 .route-option-primary {
-    background: linear-gradient(135deg, rgba(26, 115, 232, 0.18), rgba(26, 115, 232, 0.08));
-    border-color: rgba(26, 115, 232, 0.3);
-    box-shadow: 0 0 20px rgba(26, 115, 232, 0.06);
+    background: linear-gradient(135deg, rgba($blue-color, 0.15), rgba($blue-color, 0.06));
+    border-color: rgba($blue-color, 0.25);
+    box-shadow: 0 0 20px rgba($blue-color, 0.04);
 
     &:hover {
-        background: linear-gradient(135deg, rgba(26, 115, 232, 0.32), rgba(26, 115, 232, 0.15));
-        border-color: rgba(26, 115, 232, 0.5);
-        box-shadow: 0 0 24px rgba(26, 115, 232, 0.12);
+        background: linear-gradient(135deg, rgba($blue-color, 0.28), rgba($blue-color, 0.12));
+        border-color: rgba($blue-color, 0.45);
+        box-shadow: 0 0 24px rgba($blue-color, 0.1);
     }
 }
 
 .route-option-alt {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: $glass-border;
 
     &:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.12);
     }
 }
 
@@ -265,14 +266,14 @@
 }
 
 .route-badge-fast {
-    background: linear-gradient(135deg, rgba(26, 115, 232, 0.35), rgba(26, 115, 232, 0.15));
-    color: #64b5f6;
-    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.2);
+    background: linear-gradient(135deg, rgba($blue-color, 0.3), rgba($blue-color, 0.12));
+    color: $blue-color;
+    box-shadow: 0 2px 8px rgba($blue-color, 0.15);
 }
 
 .route-badge-alt {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
-    color: #aab8c5;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+    color: $text-secondary;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -294,13 +295,13 @@
 .route-option-label {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #f0f4f8;
+    color: $white-font-text;
     letter-spacing: 0.01em;
 }
 
 .route-option-desc {
     font-size: 0.7rem;
-    color: #6b7f99;
+    color: $text-muted;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -311,45 +312,45 @@
     align-items: center;
     gap: 6px;
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: $text-secondary;
     font-weight: 500;
     flex-wrap: wrap;
 }
 
 .stat-eta {
-    color: #c8d2e0;
+    color: $white-font-text;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
 .stat-sep {
-    color: #4a5a6e;
+    color: $text-dim;
     font-weight: 300;
 }
 
 .stat-dist {
-    color: #8899aa;
+    color: $text-muted;
 }
 
 .traffic-delay-badge {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    background: rgba(244, 67, 54, 0.18);
-    color: #ef5350;
+    background: rgba($red-color, 0.15);
+    color: $red-color;
     font-size: 0.7rem;
     font-weight: 700;
     padding: 2px 7px;
     border-radius: 8px;
     vertical-align: middle;
-    border: 1px solid rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba($red-color, 0.2);
     white-space: nowrap;
 }
 
 .traffic-delay-badge-alt {
-    background: rgba(255, 152, 0, 0.15);
-    color: #ffb74d;
-    border-color: rgba(255, 152, 0, 0.2);
+    background: rgba($warning-color, 0.12);
+    color: $warning-color;
+    border-color: rgba($warning-color, 0.2);
 }
 
 .time-diff-badge {
@@ -366,10 +367,10 @@
 }
 
 .time-diff-faster {
-    background: rgba(76, 175, 80, 0.18);
-    color: #66bb6a;
-    border: 1px solid rgba(76, 175, 80, 0.25);
-    box-shadow: 0 0 12px rgba(76, 175, 80, 0.08);
+    background: rgba($green-color, 0.15);
+    color: $green-color;
+    border: 1px solid rgba($green-color, 0.2);
+    box-shadow: 0 0 12px rgba($green-color, 0.06);
 }
 
 .route-cancel-btn {
@@ -382,7 +383,7 @@
     padding: 10px 0;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #6b7f99;
+    color: $text-muted;
     cursor: pointer;
     transition: color 0.2s, background 0.2s;
     user-select: none;
@@ -392,12 +393,11 @@
     font-family: inherit;
 
     &:hover {
-        color: #c8d2e0;
-        background: rgba(255, 255, 255, 0.04);
+        color: $text-secondary;
+        background: rgba(255, 255, 255, 0.03);
     }
-
     &:active {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.06);
     }
 }
 
@@ -413,15 +413,19 @@
     transform: translateY(20px) scale(0.9);
 }
 
+// ═══════════════════════════════════════════
+//   ALT ROUTE CARD
+// ═══════════════════════════════════════════
+
 .alt-route-card {
     position: absolute;
     bottom: 250px;
     right: 80px;
-    background: rgba(45, 60, 78, 0.9);
+    background: $glass-bg;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    border: 1px solid $glass-border-strong;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     border-radius: 12px;
     padding: 10px 14px;
     display: flex;
@@ -432,16 +436,15 @@
     transition: transform 0.2s, background 0.2s;
 
     &:hover {
-        background: rgba(55, 70, 88, 0.95);
+        background: rgba($bg-elevated, 0.95);
         transform: scale(1.05);
     }
-
     &:active {
         transform: scale(0.95);
     }
 
     .alt-icon {
-        color: #8899aa;
+        color: $text-muted;
         font-size: 24px;
     }
 
@@ -452,14 +455,14 @@
 
     .alt-label {
         font-size: 0.8rem;
-        color: #aab8c5;
+        color: $text-secondary;
         font-weight: 500;
         line-height: 1.2;
     }
 
     .alt-time {
         font-size: 1.1rem;
-        color: #fff;
+        color: $white-font-text;
         font-weight: 700;
     }
 
@@ -472,9 +475,9 @@
         font-size: 0.65rem;
         font-weight: 700;
         border-radius: 6px;
-        background: rgba(244, 67, 54, 0.18);
-        color: #ef5350;
-        border: 1px solid rgba(244, 67, 54, 0.2);
+        background: rgba($red-color, 0.15);
+        color: $red-color;
+        border: 1px solid rgba($red-color, 0.2);
         width: fit-content;
     }
 }

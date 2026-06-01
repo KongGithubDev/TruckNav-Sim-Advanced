@@ -432,7 +432,7 @@ onMounted(async () => {
         // Add Scale Control
         map.value.addControl(new maplibregl.ScaleControl({
             maxWidth: 100,
-            unit: settings.value.units === 'metric' ? 'metric' : 'imperial'
+            unit: activeSettings.value.units === 'metric' ? 'metric' : 'imperial'
         }), "bottom-right");
 
         const initialTruckImg = await generateTruckIcon(
