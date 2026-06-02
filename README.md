@@ -54,28 +54,6 @@ TruckNavAdvanced is a real-time external GPS navigation system built with TypeSc
 
 ---
 
-## Version History
-
-### v0.1.3 (Current)
-
-New features and improvements:
-- German (DE) locale support for voice directions and UI labels
-- Contextual straight instruction on ManeuverCard (exit prefix, destination city, plain distance)
-- Voice straight announcement synced with ManeuverCard UI content
-- Speed limit warning threshold changed to 5% over limit
-- Reroute voice notification on automatic route recalculation
-- Two-stage arrival voice (approaching at 500 m, arrived at destination)
-- Exit number badge on highway direction icons
-- Per-category voice toggle for long straight announcements
-- Bug fix: Thai digit hardcoded numerals replaced with Arabic numerals
-
-### v0.1.2
-
-Initial release with route selection, traffic visualization, auto day/night theme,
-voice guidance, alternative routes, and multi-language support (EN, TH).
-
----
-
 ## Compatibility
 
 | Component | Status |
