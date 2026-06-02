@@ -36,29 +36,6 @@ TruckNavAdvanced is a real-time external GPS navigation system built with TypeSc
 - **Glassmorphism UI:** Translucent, backdrop-blurred interface elements with smooth transitions and a modern aesthetic.
 - **Multi-Language Support:** Full interface localization in English, German, and Thai, including route descriptions and voice guidance messages.
 
----
-
-## Changelog
-
-### v0.1.2 (2024-06-02)
-
-**Bug Fixes**
-- 🗺️ **Route traffic colors preserved on progress updates** — congestion colors no longer overwritten by route progress redraw
-- 🗣️ **TTS voice respects selected language** — voice now reads in the correct language (voice.lang) instead of app locale
-- 🔍 **City search now works** — fixed `activeSettings.selectedGame` not existing on `GameProfile`
-- 📡 **Telemetry game comparison null-safe** — fixed `selectedGame` being null at startup causing constant resets
-- 🏗️ **Worker crash guard** — prevented empty array access in route.worker.ts
-- 🗺️ **Map source ID static** — changed dynamic game-based source name to static `map-roads` to survive game switches
-- 🚦 **Traffic color watcher unblocked** — removed premature `isRouteActive` guard preventing traffic colors from rendering
-- 📱 **onRouteOverview null guards** — added safety for possibly undefined path coordinates
-- ⚡ **TypeScript type safety** — fixed multiple null type errors in map.vue and EtsTelemetry.ts
-
-**Improvements**
-- 🔧 **Vite chunk splitting** — maplibre-gl, turf, proj4, pmtiles, rbush split into separate chunks for faster initial load
-- 💡 **Auto Day/Night Theme verified working** — watches in-game time and switches text color between light/dark
-- 🗣️ **Voice warning info note** — added note in settings: "Voice reads in the app's selected language"
-
----
 
 ## Roadmap
 
@@ -148,6 +125,7 @@ Include a description and screenshot of the issue when possible.
 
 - [@truckermudgeon](https://github.com/truckermudgeon) — The `maps` repository provides the foundational logic for map parsing, WGS84 coordinate conversion, and the extraction tools used to regenerate city and company location data from the latest game files.
 - [@RenCloud](https://github.com/RenCloud) — The `scs-sdk-plugin` project made telemetry communication between the game and web environment possible.
+- [@Rares-Muntean](https://github.com/Rares-Muntean) — TruckNavAdvanced is a fork of @Rares-Muntean's TruckNav-Sim, extended with alternative routing, live traffic visualization, voice guidance, auto day/night theme, multi-language support, and numerous refinements.
 
 <div align="center">
   <i>Drive safe, and happy trucking.</i>
