@@ -38,6 +38,28 @@ TruckNavAdvanced is a real-time external GPS navigation system built with TypeSc
 
 ---
 
+## Changelog
+
+### v0.1.2 (2024-06-02)
+
+**Bug Fixes**
+- 🗺️ **Route traffic colors preserved on progress updates** — congestion colors no longer overwritten by route progress redraw
+- 🗣️ **TTS voice respects selected language** — voice now reads in the correct language (voice.lang) instead of app locale
+- 🔍 **City search now works** — fixed `activeSettings.selectedGame` not existing on `GameProfile`
+- 📡 **Telemetry game comparison null-safe** — fixed `selectedGame` being null at startup causing constant resets
+- 🏗️ **Worker crash guard** — prevented empty array access in route.worker.ts
+- 🗺️ **Map source ID static** — changed dynamic game-based source name to static `map-roads` to survive game switches
+- 🚦 **Traffic color watcher unblocked** — removed premature `isRouteActive` guard preventing traffic colors from rendering
+- 📱 **onRouteOverview null guards** — added safety for possibly undefined path coordinates
+- ⚡ **TypeScript type safety** — fixed multiple null type errors in map.vue and EtsTelemetry.ts
+
+**Improvements**
+- 🔧 **Vite chunk splitting** — maplibre-gl, turf, proj4, pmtiles, rbush split into separate chunks for faster initial load
+- 💡 **Auto Day/Night Theme verified working** — watches in-game time and switches text color between light/dark
+- 🗣️ **Voice warning info note** — added note in settings: "Voice reads in the app's selected language"
+
+---
+
 ## Roadmap
 
 - **Lane Guidance:** Visual lane indicators for complex intersections and highway exits.
