@@ -1005,6 +1005,7 @@ export const useRouteController = (
         sdkScale: number,
         createEndMarker: boolean,
         avgSpeed: number,
+        skipSelectionMode: boolean = false,
     ) {
         if (adjacency.size === 0 || isCalculating.value || !isWorkerReady.value)
             return;
@@ -1048,6 +1049,12 @@ export const useRouteController = (
                 avgSpeed,
                 trafficCoords,
             );
+
+            // Check if route was cancelled while we were calculating
+            // clearRouteState sets savedDestination to null, which serves as a cancellation flag
+            if (!savedDestination.value) {
+                return;
+            }
 
             // Worker returns { main, alternative } - extract main route
             const mainResult = result?.main ?? result;
@@ -1204,10 +1211,23 @@ export const useRouteController = (
                     selectionAltDistance.value = altRouteDistance.value;
                     selectionAltEta.value = altRouteEta.value;
 
-                    // Show route selection card instead of activating immediately
-                    routeSelectionMode.value = true;
-                    routeFound.value = null; // Don't show notification yet
-                    // isRouteActive stays false - sheet won't appear yet
+                    // During rerouting, auto-select main route without showing selection card
+                    if (skipSelectionMode) {
+                        isRouteActive.value = true;
+                        routeFound.value = true;
+                        startProgressPulse();
+                        if (activeSettings.value.hasTurnNavigation) {
+                            drawTurnArrows(
+                                fullRouteDirections.value,
+                                mainResult.displayPath,
+                            );
+                        }
+                    } else {
+                        // Show route selection card instead of activating immediately
+                        routeSelectionMode.value = true;
+                        routeFound.value = null; // Don't show notification yet
+                        // isRouteActive stays false - sheet won't appear yet
+                    }
                 } else {
                     // No meaningful alternative - activate main route immediately
                     isRouteActive.value = true;
@@ -1521,6 +1541,7 @@ export const useRouteController = (
                         sdkScale,
                         false,
                         avgSpeed,
+                        true,
                     ).finally(() => {
                         isRerouting.value = false;
                         // Fade in the new route
