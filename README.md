@@ -4,6 +4,10 @@
 
 TruckNavAdvanced is a real-time external GPS navigation system built with TypeScript and Vue.js. It transforms any device with a web browser -- phone, tablet, or secondary monitor -- into a fully featured navigation display for ETS2 and ATS. The system connects to the SCS Telemetry SDK to provide live tracking, custom graph-based routing, and an immersive driving interface.
 
+<p align="center">
+  <img src="preview.png">
+</p>
+
 ---
 
 ## Features
