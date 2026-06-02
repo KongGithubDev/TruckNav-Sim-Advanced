@@ -121,6 +121,7 @@ const {
     altRouteTrafficDelay,
     swapToAltRoute,
     routeSelectionMode,
+    isAltDisplayedAsPrimary,
     selectionMainDistance,
     selectionMainEta,
     selectionMainTrafficDelay,
@@ -292,9 +293,11 @@ let wasRerouting = false;
 watch(routeTrafficInfo, (info) => {
     if (!info || !activeSettings.value.voiceWarnings) return;
     const segments = info.congestedSegments || 0;
-    const delayMin = Math.round(info.trafficDelayMinutes || 0);
+    // Convert in-game traffic minutes to real-world minutes for voice (matching card display)
+    const s = scale.value > 0 ? scale.value : (settings.value.selectedGame === "ats" ? 20 : 19);
+    const realDelayMin = Math.round((info.trafficDelayMinutes || 0) / s);
     if (segments > 0 && segments > lastCongestedSegments) {
-        const msg = t('warnings.trafficAhead').replace('{delay}', String(delayMin));
+        const msg = t('warnings.trafficAhead').replace('{delay}', String(realDelayMin));
         speakWarning('traffic_ahead', msg, 120);
     }
     lastCongestedSegments = segments;
@@ -976,8 +979,8 @@ const onCancelRoute = () => {
                                             </div>
                                             <div class="route-option-info">
                                                 <div class="route-option-top">
-                                                    <span class="route-option-label">{{ t('routeSelection.fastest') }}</span>
-                                                    <span class="route-option-desc">{{ t('routeSelection.fastDesc') }}</span>
+                                                    <span class="route-option-label">{{ isAltDisplayedAsPrimary ? t('routeSelection.trafficAvoid') : t('routeSelection.normal') }}</span>
+                                                    <span class="route-option-desc">{{ isAltDisplayedAsPrimary ? t('routeSelection.trafficAvoidDesc') : t('routeSelection.normalDesc') }}</span>
                                                 </div>
                                                 <div class="route-option-stats">
                                                     <span class="stat-eta">{{ selectionMainEta }}</span>
@@ -1009,8 +1012,8 @@ const onCancelRoute = () => {
                                             </div>
                                             <div class="route-option-info">
                                                 <div class="route-option-top">
-                                                    <span class="route-option-label">{{ t('routeSelection.alternative') }}</span>
-                                                    <span class="route-option-desc">{{ t('routeSelection.altDesc') }}</span>
+                                                    <span class="route-option-label">{{ isAltDisplayedAsPrimary ? t('routeSelection.normal') : t('routeSelection.trafficAvoid') }}</span>
+                                                    <span class="route-option-desc">{{ isAltDisplayedAsPrimary ? t('routeSelection.normalDesc') : t('routeSelection.trafficAvoidDesc') }}</span>
                                                 </div>
                                                 <div class="route-option-stats">
                                                     <span class="stat-eta">{{ selectionAltEta }}</span>

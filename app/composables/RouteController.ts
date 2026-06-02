@@ -16,7 +16,7 @@ import {
     type DirectionStep,
     type DirectionTranslations,
 } from "~/assets/utils/routing/directions";
-import { convertGeoToEts2, convertGeoToAts } from "~/assets/utils/map/converters";
+
 
 export const useRouteController = (
     map: Ref<MaplibreMap | null>,
@@ -45,6 +45,8 @@ export const useRouteController = (
     const altRouteStats = ref<Float32Array | null>(null);
     const altRouteTrafficDelay = ref<string>("");
     const hasAltRoute = computed(() => altRoutePath.value !== null);
+    // Flag: when alt route is faster, display it as primary in the selection card
+    const isAltDisplayedAsPrimary = ref(false);
 
     // Raw data for regenerating directions when alt route is selected/swapped
     const altNodeSequence = ref<number[]>([]);
@@ -1044,13 +1046,12 @@ export const useRouteController = (
             }
             isYardStart.value = startConfig.type === "yard";
 
-            // Gather traffic points and convert from geo to game coordinates for traffic-aware routing
+            // Gather traffic points (in geo coords) for traffic-aware routing of alt route
+            // The A* algorithm uses geo coordinates internally, so pass them directly
+            // Must use toRaw() because Vue reactive Proxy can't be cloned via postMessage
             const { trafficPoints } = useTrafficData();
-            const isAts = settings.value.selectedGame === "ats";
-            const trafficCoords = (trafficPoints.value || [])
-                .map(pt => isAts
-                    ? convertGeoToAts(pt.coordinates[0], pt.coordinates[1])
-                    : convertGeoToEts2(pt.coordinates[0], pt.coordinates[1]));
+            const rawPoints = toRaw(trafficPoints.value) || [];
+            const trafficCoords: [number, number][] = rawPoints.map(pt => [pt.coordinates[0], pt.coordinates[1]] as [number, number]);
 
             startNodeId.value = startConfig.toId;
             const result = await findFlexibleRoute(
@@ -1195,10 +1196,6 @@ export const useRouteController = (
                     altSequenceManeuvers.value = altData.sequenceManeuvers;
                     altSequenceExits.value = altData.sequenceExits;
 
-                    const aH = Math.floor(altRealHours);
-                    const aM = Math.round((altRealHours - aH) * 60);
-                    altRouteEta.value = `${aH}h ${aM}min`;
-
                     // Compute traffic info for alt route: both visualization colors and delay estimate
                     const { trafficPoints } = useTrafficData();
                     const tp = trafficPoints.value || [];
@@ -1207,15 +1204,25 @@ export const useRouteController = (
                     // Draw alt route with traffic congestion colors
                     drawAltRouteOnMap(altData.displayPath, altTrafficInfo?.routeColors);
 
+                    // Alt route traffic delay (in real-world minutes) — uses granular weighted sum
+                    const altDelayMin = altTrafficInfo ? Math.round(altTrafficInfo.trafficDelayMinutes / sdkScale) : 0;
+                    selectionAltTrafficDelay.value = altDelayMin > 0 ? `+${altDelayMin}m` : "";
+                    altRouteTrafficDelay.value = altDelayMin > 0 ? `+${altDelayMin}m` : "";
+
+                    // Alt route ETA with traffic (consistent with routeEta format)
+                    const altTotalRealHours = altRealHours + (altDelayMin / 60);
+                    const aH = Math.floor(altTotalRealHours);
+                    const aM = Math.round((altTotalRealHours - aH) * 60);
+                    let altTrafficStr = "";
+                    if (altDelayMin > 0) {
+                        altTrafficStr = ` (+${altDelayMin}m traffic)`;
+                    }
+                    altRouteEta.value = `${aH}h ${aM}min${altTrafficStr}`;
+
                     // Main route traffic delay (from existing polling data) — uses granular weighted sum
                     const mainTrafficInfo = routeTrafficInfo.value;
                     const mainDelayMin = mainTrafficInfo ? Math.round(mainTrafficInfo.trafficDelayMinutes / sdkScale) : 0;
                     selectionMainTrafficDelay.value = mainDelayMin > 0 ? `+${mainDelayMin}m` : "";
-                    
-                    // Alt route traffic delay (for both selection card and post-selection alt card) — uses granular weighted sum
-                    const altDelayMin = altTrafficInfo ? Math.round(altTrafficInfo.trafficDelayMinutes / sdkScale) : 0;
-                    selectionAltTrafficDelay.value = altDelayMin > 0 ? `+${altDelayMin}m` : "";
-                    altRouteTrafficDelay.value = altDelayMin > 0 ? `+${altDelayMin}m` : "";
 
                     // Compute time difference for the comparison badge
                     const mainTotalMin = totalRealHours * 60 + mainDelayMin;
@@ -1232,9 +1239,36 @@ export const useRouteController = (
 
                     // Store selection info for UI
                     selectionMainDistance.value = routeDistance.value;
-                    selectionMainEta.value = routeEta.value;
+                    // Use base ETA without traffic for selection card (traffic shown as badge separately)
+                    const mainBaseH = Math.floor(totalRealHours);
+                    const mainBaseM = Math.round((totalRealHours - mainBaseH) * 60);
+                    selectionMainEta.value = `${mainBaseH}h ${mainBaseM}min`;
                     selectionAltDistance.value = altRouteDistance.value;
-                    selectionAltEta.value = altRouteEta.value;
+                    // Use base ETA without traffic for alt selection card (badge shows traffic separately)
+                    const altBaseH = Math.floor(altRealHours);
+                    const altBaseM = Math.round((altRealHours - altBaseH) * 60);
+                    selectionAltEta.value = `${altBaseH}h ${altBaseM}min`;
+
+                    // If alt route is faster (including traffic), swap display so faster shows first
+                    isAltDisplayedAsPrimary.value = false;
+                    if (selectionTimeDiff.value.fasterLabel === 'alt') {
+                        // Swap display values so the faster route (alt) is shown as primary
+                        const tmpDist = selectionMainDistance.value;
+                        const tmpEta = selectionMainEta.value;
+                        const tmpDelay = selectionMainTrafficDelay.value;
+                        selectionMainDistance.value = selectionAltDistance.value;
+                        selectionMainEta.value = selectionAltEta.value;
+                        selectionMainTrafficDelay.value = selectionAltTrafficDelay.value;
+                        selectionAltDistance.value = tmpDist;
+                        selectionAltEta.value = tmpEta;
+                        selectionAltTrafficDelay.value = tmpDelay;
+                        isAltDisplayedAsPrimary.value = true;
+                        // Also swap the faster label so primary always shows "faster" badge
+                        selectionTimeDiff.value = {
+                            minutes: selectionTimeDiff.value.minutes,
+                            fasterLabel: 'main',
+                        };
+                    }
 
                     // During rerouting, auto-select main route without showing selection card
                     if (skipSelectionMode) {
@@ -1351,43 +1385,44 @@ export const useRouteController = (
         const currentRealHours = cache[currentIdx + 1]!;
 
         const remKm = totalKm - currentKm;
-        const remRealHours = totalRealHours - currentRealHours;
-        routeDistance.value = Math.round(remKm);
+        const remRealHours = totalRealHours - currentRealHours;                routeDistance.value = Math.round(remKm);
 
-        if (remRealHours > 0 || remKm > 0) {
-            // Dynamic ETA based on current truck speed (in-game → real-world via sdkScale)
-            const currentSpeed = avgSpeed > 10 ? avgSpeed : 60;
-            const dynamicInGameHours = remKm / currentSpeed;
-            const dynamicRealHours = dynamicInGameHours / sdkScale;
+                if (remRealHours > 0 || remKm > 0) {
+                    // Dynamic ETA based on current truck speed (in-game → real-world via sdkScale)
+                    const currentSpeed = avgSpeed > 10 ? avgSpeed : 60;
+                    const dynamicInGameHours = remKm / currentSpeed;
+                    const dynamicRealHours = dynamicInGameHours / sdkScale;
 
-            // Blend the original ETA (real-world from cache) with dynamic real-world ETA
-            const blendedHours = (dynamicRealHours + remRealHours) / 2;
+                    // Blend the original ETA (real-world from cache) with dynamic real-world ETA
+                    const blendedHours = (dynamicRealHours + remRealHours) / 2;
 
-            // Add Traffic Delay (convert in-game to real-world) — uses granular weighted sum
-            const { routeTrafficInfo } = useTrafficData();
-            const trafficDelayMinutes = routeTrafficInfo.value?.trafficDelayMinutes || 0;
-            const trafficDelayInGameHours = trafficDelayMinutes / 60;
-            const trafficDelayRealHours = trafficDelayInGameHours / sdkScale;
-            const finalRealHours = blendedHours + trafficDelayRealHours;
-            
-            const h = Math.floor(finalRealHours);
-            const m = Math.round((finalRealHours - h) * 60);
-            
-            let trafficDelayStr = "";
-            if (trafficDelayRealHours > 0) {
-                trafficDelayStr = ` (+${Math.round(trafficDelayRealHours * 60)}m traffic)`;
-            }
-            
-            routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
+                    // Add Traffic Delay (convert in-game to real-world) — prorated by remaining distance
+                    const { routeTrafficInfo } = useTrafficData();
+                    const fullTrafficDelay = routeTrafficInfo.value?.trafficDelayMinutes || 0;
+                    const remainingRatio = totalKm > 0 ? remKm / totalKm : 1;
+                    const proratedTrafficDelay = fullTrafficDelay * remainingRatio;
+                    const trafficDelayInGameHours = proratedTrafficDelay / 60;
+                    const trafficDelayRealHours = trafficDelayInGameHours / sdkScale;
+                    const finalRealHours = blendedHours + trafficDelayRealHours;
+                    
+                    const h = Math.floor(finalRealHours);
+                    const m = Math.round((finalRealHours - h) * 60);
+                    
+                    let trafficDelayStr = "";
+                    if (trafficDelayRealHours > 0) {
+                        trafficDelayStr = ` (+${Math.round(trafficDelayRealHours * 60)}m traffic)`;
+                    }
+                    
+                    routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
 
-            // Real-world arrival time
-            const now = new Date();
-            const arrivalDate = new Date(now.getTime() + finalRealHours * 3600000);
-            arrivalTime.value = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else {
-            routeEta.value = "Arriving...";
-            arrivalTime.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
+                    // Compute arrival time (including traffic)
+                    const now = new Date();
+                    const arrivalDate = new Date(now.getTime() + finalRealHours * 3600000);
+                    arrivalTime.value = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    routeEta.value = "Arriving...";
+                    arrivalTime.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
 
         if (fullRouteDirections.value.length > 1) {
             const upcomingTurn = fullRouteDirections.value[1];
@@ -1593,6 +1628,7 @@ export const useRouteController = (
 
         isRouteActive.value = false;
         routeSelectionMode.value = false;
+        isAltDisplayedAsPrimary.value = false;
         endNodeId.value = null;
         currentRoutePath.value = null;
         savedDestination.value = null;
@@ -1627,7 +1663,12 @@ export const useRouteController = (
     }
 
         function confirmSelectedRoute(index: 0 | 1) {
-            if (index === 1 && altRoutePath.value) {
+            // If display was swapped because alt is faster, map button index back to actual route
+            const actualIndex = isAltDisplayedAsPrimary.value ? (index === 0 ? 1 : 0) : index;
+            isAltDisplayedAsPrimary.value = false;
+
+            // Use actualIndex instead of index for route selection logic
+            if (actualIndex === 1 && altRoutePath.value) {
                 // User chose the alt route - swap alt to main
                 // Keep original main as new alt
                 const oldMainPath = currentRoutePath.value;
@@ -1733,6 +1774,7 @@ export const useRouteController = (
 
         function swapToAltRoute() {
             if (!altRoutePath.value || !map.value) return;
+            isAltDisplayedAsPrimary.value = false;
 
             // Make alt route the main route
             currentRoutePath.value = altRoutePath.value;
@@ -1834,6 +1876,7 @@ export const useRouteController = (
             selectionAltEta,
             selectionAltTrafficDelay,
             selectionTimeDiff,
+            isAltDisplayedAsPrimary,
             confirmSelectedRoute,
             initWorkerData,
             destroyWorker,

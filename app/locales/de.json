@@ -152,12 +152,12 @@
     },
     "routeSelection": {
         "title": "Route wählen",
-        "fastest": "Schnellste",
-        "alternative": "Alternative",
+        "normal": "Normale Route",
+        "trafficAvoid": "Stau vermeiden",
         "cancel": "Abbrechen",
 
-        "fastDesc": "Schnellste Ankunft",
-        "altDesc": "Vermeidet Stau",
+        "normalDesc": "Standardroute",
+        "trafficAvoidDesc": "Umgeht Staus",
         "timeDiff": "{min} Min. schneller"
     }
 }

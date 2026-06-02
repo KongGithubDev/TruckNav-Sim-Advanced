@@ -152,12 +152,12 @@
     },
     "routeSelection": {
         "title": "เลือกเส้นทาง",
-        "fastest": "เส้นทางไวที่สุด",
-        "alternative": "เส้นทางปกติ",
+        "normal": "เส้นทางปกติ",
+        "trafficAvoid": "เส้นเลี่ยงการจราจร",
         "cancel": "ยกเลิก",
 
-        "fastDesc": "ถึงเร็วที่สุด",
-        "altDesc": "หลีกเลี่ยงการจราจร",
+        "normalDesc": "เส้นทางปกติ",
+        "trafficAvoidDesc": "หลีกเลี่ยงรถติด",
         "timeDiff": "เร็วกว่า {min} นาที"
     }
 }
