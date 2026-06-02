@@ -1179,6 +1179,13 @@ export const useRouteController = (
                 altRouteDistance.value = 0;
                 altRouteStats.value = null;
 
+                // ── Wait for fresh traffic data on the new route before comparing routes ──
+                if (map.value && activeSettings.value.showTraffic) {
+                    const { refreshTraffic } = useTrafficData();
+                    const game = (settings.value.selectedGame || "ets2") as "ets2" | "ats";
+                    await refreshTraffic(toRaw(map.value)!, game, toRaw(currentRoutePath.value)!);
+                }
+
                 const altData = result?.alternative;
                 const hasMeaningfulAlt = altData && altData.displayPath && altData.stats && (() => {
                     const altLastIdx = (altData.rawPath.length - 1) * 2;
