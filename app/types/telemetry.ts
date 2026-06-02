@@ -46,6 +46,7 @@ export interface TruckCurrent {
     position: Vector3;
     heading: number;
     parkingBrake: boolean;
+    input?: TruckInput;
 }
 
 export interface DashboardData {
@@ -61,6 +62,11 @@ export interface DashboardData {
     cruiseControlActive: boolean;
     rpm: number;
     odometer: number;
+    airPressure?: number;
+}
+
+export interface TruckInput {
+    wipers?: boolean;
 }
 
 export interface LightsData {

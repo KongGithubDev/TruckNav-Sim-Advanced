@@ -38,12 +38,17 @@ export function getTruckState(
         currentHeadingOffset,
     );
 
+    const airPressure = data.truck.current.dashboard.airPressure ?? 0;
+    const wipers = data.truck.current.input?.wipers ?? false;
+
     return {
         truckCoords,
         truckSpeed,
         truckHeading: heading,
         headingOffset: newOffset,
         avgSpeed,
+        airPressure,
+        wipers,
     };
 }
 

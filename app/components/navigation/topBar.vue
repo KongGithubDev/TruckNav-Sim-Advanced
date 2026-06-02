@@ -7,6 +7,8 @@ const props = defineProps<{
     restStopTime: string;
     gameTime: string;
     isWeb: boolean;
+    airPressure?: number;
+    wipers?: boolean;
 }>();
 
 const { settings } = useSettings();
@@ -39,6 +41,27 @@ const fuelConverted = computed(() => literToUserUnits(props.fuel));
                         {{ fuelConverted
                         }}<span class="liters">{{ fuelUnit }}</span>
                     </p>
+                </div>
+
+                <div
+                    v-show="airPressure !== undefined && airPressure > 0"
+                    class="air-pressure"
+                    title="Air pressure"
+                >
+                    <Icon name="lucide:gauge" size="20" />
+                    <p>{{ Math.round(airPressure ?? 0) }}<span class="unit">psi</span></p>
+                </div>
+
+                <div
+                    v-if="wipers"
+                    class="wipers-indicator"
+                    title="Wipers on"
+                >
+                    <Icon
+                        name="lucide:droplets"
+                        size="20"
+                        class="wipers-icon"
+                    />
                 </div>
 
                 <div

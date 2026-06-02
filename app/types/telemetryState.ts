@@ -17,6 +17,8 @@ export interface TruckState {
     truckHeading: number;
     truckSpeed: number;
     averageSpeed: number;
+    airPressure: number;
+    wipers: boolean;
 }
 
 export interface NavigationState {

@@ -52,6 +52,8 @@ const {
     scale,
     averageSpeed,
     destinationCompany,
+    airPressure,
+    wipers,
 } = useEtsTelemetry();
 
 //
@@ -135,10 +137,10 @@ const { activeSettings, settings } = useSettings();
 const { t } = useTranslations();
 const { speakWarning } = useVoiceWarnings();
 
-// Multi-tier voice direction state
+// Multi-tier voice direction state (reduced to 3 tiers to prevent overlap at high speed)
+// tier_2km now covers the full 0.3-1.5km approach range (merged old 2km + 1km)
 let spokenTiers = {
     tier_2km: false,
-    tier_1km: false,
     tier_500m: false,
     tier_now: false,
 };
@@ -169,7 +171,6 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
         currentVoiceStepId = nextStep.id;
         spokenTiers = {
             tier_2km: false,
-            tier_1km: false,
             tier_500m: false,
             tier_now: false,
         };
@@ -202,24 +203,46 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
                 straightMsg = `Take exit ${nextStep.exitCount}, then continue straight for ${roundedKm} kilometers`;
             }
         }
-        // Priority 2: destination city name (e.g. "Continue towards Frankfurt for 45 kilometers")
+        // Priority 2: destination city name — highway-aware when on highway
         else if (dest) {
-            if (locale === "th") {
-                straightMsg = `ตรงไป${dest}อีก ${roundedKm} กิโลเมตร`;
-            } else if (locale === "de") {
-                straightMsg = `Weiter in Richtung ${dest} für ${roundedKm} Kilometer`;
+            const isOnHighway = nextStep.type === "exit-highway";
+            if (isOnHighway) {
+                if (locale === "th") {
+                    straightMsg = `อยู่บนทางด่วนไป ${dest} อีก ${roundedKm} กิโลเมตร`;
+                } else if (locale === "de") {
+                    straightMsg = `Bleiben Sie auf der Autobahn in Richtung ${dest} für ${roundedKm} Kilometer`;
+                } else {
+                    straightMsg = `Stay on the highway towards ${dest} for ${roundedKm} kilometers`;
+                }
             } else {
-                straightMsg = `Continue towards ${dest} for ${roundedKm} kilometers`;
+                if (locale === "th") {
+                    straightMsg = `ตรงไป ${dest} อีก ${roundedKm} กิโลเมตร`;
+                } else if (locale === "de") {
+                    straightMsg = `Weiter in Richtung ${dest} für ${roundedKm} Kilometer`;
+                } else {
+                    straightMsg = `Continue towards ${dest} for ${roundedKm} kilometers`;
+                }
             }
         }
-        // Priority 3: plain fallback
+        // Priority 3: plain fallback — road-aware: detect if on highway
         else {
-            if (locale === "th") {
-                straightMsg = `ตรงไปอีก ${roundedKm} กิโลเมตร`;
-            } else if (locale === "de") {
-                straightMsg = `Geradeaus weiter für ${roundedKm} Kilometer`;
+            const isOnHighway = nextStep.type === "exit-highway";
+            if (isOnHighway) {
+                if (locale === "th") {
+                    straightMsg = `อยู่บนทางด่วนต่อไปอีก ${roundedKm} กิโลเมตร`;
+                } else if (locale === "de") {
+                    straightMsg = `Bleiben Sie auf der Autobahn für ${roundedKm} Kilometer`;
+                } else {
+                    straightMsg = `Stay on the highway for ${roundedKm} kilometers`;
+                }
             } else {
-                straightMsg = `Continue straight for ${roundedKm} kilometers`;
+                if (locale === "th") {
+                    straightMsg = `ตรงไปอีก ${roundedKm} กิโลเมตร`;
+                } else if (locale === "de") {
+                    straightMsg = `Geradeaus weiter für ${roundedKm} Kilometer`;
+                } else {
+                    straightMsg = `Continue straight for ${roundedKm} kilometers`;
+                }
             }
         }
 
@@ -227,21 +250,15 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
         spokenStraight = true;
     }
 
-    // Multi-tier Google Maps style announcements
+    // Multi-tier turn announcements (3 tiers to prevent overlap at high speed)
     // Each tier has both lower and upper bounds to prevent cascade firing
-    if (dist >= 0.7 && dist < 1.5 && !spokenTiers.tier_2km) {
+    // tier_2km now covers the full 0.3-1.5km approach range (merged old 2km + 1km)
+    if (dist >= 0.3 && dist < 1.5 && !spokenTiers.tier_2km) {
         const msg = hasNearbyTurn
             ? buildCombinedVoiceDirection(nextStep, secondStep!, dist, locale)
             : buildVoiceDirection(nextStep, dist, locale);
         speakWarning('turn_2km', msg, 20);
         spokenTiers.tier_2km = true;
-    }
-    if (dist >= 0.3 && dist < 0.7 && !spokenTiers.tier_1km) {
-        const msg = hasNearbyTurn
-            ? buildCombinedVoiceDirection(nextStep, secondStep!, dist, locale)
-            : buildVoiceDirection(nextStep, dist, locale);
-        speakWarning('turn_1km', msg, 20);
-        spokenTiers.tier_1km = true;
     }
     if (dist >= 0.08 && dist < 0.3 && !spokenTiers.tier_500m) {
         const msg = buildVoiceDirection(nextStep, dist, locale);
@@ -790,6 +807,8 @@ const onCancelRoute = () => {
                         :rest-stop-time="restStoptime"
                         :truck-speed="truckSpeed"
                         :is-web="isWeb"
+                        :air-pressure="airPressure"
+                        :wipers="wipers"
                     />
 
                     <TrafficProgressBar />

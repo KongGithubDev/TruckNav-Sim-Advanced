@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { version } from '~~/package.json';
+
 const props = defineProps<{
     launchMap: () => void;
     goToDesktopIndex: () => void;
@@ -58,7 +60,7 @@ const gameMeta = computed(() => ({
             <div class="top-logo">
                 <Icon name="lucide:compass" class="logo-icon" size="22" />
                 <span class="logo-text">TruckNavAdvanced</span>
-                <span class="logo-version">v0.1.1</span>
+                <span class="logo-version">v{{ version }}</span>
             </div>
         </div>
 

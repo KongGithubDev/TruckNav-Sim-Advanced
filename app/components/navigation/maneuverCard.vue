@@ -57,7 +57,7 @@ const towardsSuffix = computed(() => {
     if (!dest) return "";
     const locale = settings.value.locale || "en";
     if (locale === "th") {
-        return ` ไป${dest}`;   // "ไปแฟรงก์เฟิร์ต"
+        return ` ไป ${dest}`;   // "ไป แฟรงก์เฟิร์ต"
     }
     if (locale === "de") {
         return ` in Richtung ${dest}`;  // "in Richtung Frankfurt"
@@ -95,14 +95,26 @@ const straightInstruction = computed(() => {
         return `${prefix}continue straight for ${rounded} ${distanceUnit.value}`;
     }
 
-    // Priority 2: destination city name
+    // Priority 2: destination city name — highway-aware when on highway
     if (towards) {
-        if (locale === "th") return `ตรง${towards}อีก ${distStr} ${distanceUnit.value}`;
+        const isOnHighway = primaryTurn.value?.type === "exit-highway";
+        if (isOnHighway) {
+            if (locale === "th") return `อยู่บนทางด่วน${towards} อีก ${distStr} ${distanceUnit.value}`;
+            if (locale === "de") return `Bleiben Sie auf der Autobahn${towards} für ${rounded} ${distanceUnit.value}`;
+            return `Stay on the highway${towards} for ${rounded} ${distanceUnit.value}`;
+        }
+        if (locale === "th") return `ตรง${towards} อีก ${distStr} ${distanceUnit.value}`;
         if (locale === "de") return `Weiter${towards} für ${rounded} ${distanceUnit.value}`;
         return `Continue${towards} for ${rounded} ${distanceUnit.value}`;
     }
 
-    // Priority 3: plain fallback
+    // Priority 3: plain fallback — road-aware: detect if on highway
+    const isOnHighway = primaryTurn.value?.type === "exit-highway";
+    if (isOnHighway) {
+        if (locale === "th") return `อยู่บนทางด่วนต่อไปอีก ${distStr} ${distanceUnit.value}`;
+        if (locale === "de") return `Bleiben Sie auf der Autobahn für ${rounded} ${distanceUnit.value}`;
+        return `Stay on the highway for ${rounded} ${distanceUnit.value}`;
+    }
     if (locale === "th") return `ตรงไปอีก ${distStr} ${distanceUnit.value}`;
     if (locale === "de") return `Geradeaus weiter für ${rounded} ${distanceUnit.value}`;
     return `Continue straight for ${rounded} ${distanceUnit.value}`;

@@ -3,8 +3,10 @@ export function useVoiceWarnings() {
     const { t } = useTranslations();
     const availableVoices = ref<SpeechSynthesisVoice[]>([]);
     
-    // Track last spoken times to avoid spamming
+    // Track last spoken times to avoid spamming (per-category)
     const lastSpoken = new Map<string, number>();
+    // Global last-spoken timestamp — enforces minimum gap between ANY voice warnings
+    let globalLastSpoken = 0;
 
     const LOCALE_TO_LANG: Record<string, string> = {
         en: "en-US",
@@ -46,6 +48,12 @@ export function useVoiceWarnings() {
             return; // Still on cooldown
         }
 
+        // Enforce a minimum 4-second gap between ANY voice warnings
+        // Prevents overlapping speech when driving at high speed
+        if (now - globalLastSpoken < 4000) {
+            return;
+        }
+
         const utterance = new SpeechSynthesisUtterance(message);
         
         // Find preferred voice and set language for proper pronunciation
@@ -65,6 +73,7 @@ export function useVoiceWarnings() {
 
         window.speechSynthesis.speak(utterance);
         lastSpoken.set(category, now);
+        globalLastSpoken = now;
     };
 
     /**

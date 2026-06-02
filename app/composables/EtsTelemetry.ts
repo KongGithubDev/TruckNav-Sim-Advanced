@@ -19,6 +19,8 @@ const truckState = reactive<TruckState>({
     truckHeading: 0,
     truckSpeed: 0,
     averageSpeed: 80,
+    airPressure: 0,
+    wipers: false,
 });
 
 const gameState = reactive<GameState>({
@@ -153,6 +155,8 @@ export function useEtsTelemetry() {
             truckHeading,
             headingOffset: newOffset,
             avgSpeed,
+            airPressure,
+            wipers,
         } = getTruckState(
             data,
             lastPosition,
@@ -167,6 +171,8 @@ export function useEtsTelemetry() {
             truckHeading: truckHeading,
             truckSpeed: truckSpeed,
             averageSpeed: avgSpeed,
+            airPressure: airPressure,
+            wipers: wipers,
         });
 
         lastPosition = truckCoords;
@@ -223,6 +229,8 @@ export function useEtsTelemetry() {
             truckCoords: [0, 0],
             truckHeading: 0,
             truckSpeed: 0,
+            airPressure: 0,
+            wipers: false,
         });
 
         Object.assign(navigationState, {

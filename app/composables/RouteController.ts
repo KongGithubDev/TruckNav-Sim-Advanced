@@ -46,6 +46,20 @@ export const useRouteController = (
     const altRouteTrafficDelay = ref<string>("");
     const hasAltRoute = computed(() => altRoutePath.value !== null);
 
+    // Raw data for regenerating directions when alt route is selected/swapped
+    const altNodeSequence = ref<number[]>([]);
+    const altNodeKms = ref<Float32Array | null>(null);
+    const altSequenceManeuvers = ref<Int8Array | null>(null);
+    const altSequenceExits = ref<Int8Array | null>(null);
+    // Main route raw data (for regenerating directions when swapping back from alt)
+    const mainNodeSequence = ref<number[]>([]);
+    const mainNodeKms = ref<Float32Array | null>(null);
+    const mainSequenceManeuvers = ref<Int8Array | null>(null);
+    const mainSequenceExits = ref<Int8Array | null>(null);
+
+    // Last known SDK scale for traffic delay calculations
+    const lastSdkScale = ref(19);
+
     const savedDestination = ref<[number, number] | null>(null);
 
     const isRouteActive = ref(false);
@@ -1060,6 +1074,7 @@ export const useRouteController = (
             const mainResult = result?.main ?? result;
 
             if (mainResult) {
+                lastSdkScale.value = sdkScale;
                 endNodeId.value = mainResult.endId;
 
                 const frozenRawPath = Object.freeze(mainResult.displayPath);
@@ -1102,6 +1117,12 @@ export const useRouteController = (
                     clickCoords[0],
                     clickCoords[1],
                 );
+
+                // Store main route raw data for potential directions regeneration
+                mainNodeSequence.value = mainResult.nodeSequence;
+                mainNodeKms.value = mainResult.nodeKms;
+                mainSequenceManeuvers.value = mainResult.sequenceManeuvers;
+                mainSequenceExits.value = mainResult.sequenceExits;
 
                 fullRouteDirections.value = generateDirectionsList(
                     mainResult.nodeSequence,
@@ -1169,6 +1190,10 @@ export const useRouteController = (
                     altRoutePath.value = altData.displayPath;
                     altRouteDistance.value = Math.round(altKm);
                     altRouteStats.value = altData.stats;
+                    altNodeSequence.value = altData.nodeSequence;
+                    altNodeKms.value = altData.nodeKms;
+                    altSequenceManeuvers.value = altData.sequenceManeuvers;
+                    altSequenceExits.value = altData.sequenceExits;
 
                     const aH = Math.floor(altRealHours);
                     const aM = Math.round((altRealHours - aH) * 60);
@@ -1578,6 +1603,14 @@ export const useRouteController = (
         altRouteDistance.value = 0;
         altRouteStats.value = null;
         altRouteTrafficDelay.value = "";
+        altNodeSequence.value = [];
+        altNodeKms.value = null;
+        altSequenceManeuvers.value = null;
+        altSequenceExits.value = null;
+        mainNodeSequence.value = [];
+        mainNodeKms.value = null;
+        mainSequenceManeuvers.value = null;
+        mainSequenceExits.value = null;
         updateProfile("lastDestination", null);
         stopNavigationMode();
 
@@ -1602,18 +1635,73 @@ export const useRouteController = (
                 const oldMainEta = routeEta.value;
                 const oldMainStats = routeStatsCache.value;
 
+                // Save old main raw data for swap-back alt
+                const oldMainNodeSeq = mainNodeSequence.value;
+                const oldMainNodeKms = mainNodeKms.value;
+                const oldMainManeuvers = mainSequenceManeuvers.value;
+                const oldMainExits = mainSequenceExits.value;
+
                 // Make alt the new main
                 currentRoutePath.value = altRoutePath.value;
                 routeDistance.value = altRouteDistance.value;
                 routeEta.value = altRouteEta.value;
                 routeStatsCache.value = altRouteStats.value;
 
-                // Old main becomes new alt — compute its traffic delay
+                // Restore main raw data from alt (for correct directions)
+                mainNodeSequence.value = altNodeSequence.value;
+                mainNodeKms.value = altNodeKms.value;
+                mainSequenceManeuvers.value = altSequenceManeuvers.value;
+                mainSequenceExits.value = altSequenceExits.value;
+
+                // Regenerate directions for the alt route (now main)
+                if (mainNodeSequence.value.length > 0 && mainNodeKms.value) {
+                    fullRouteDirections.value = generateDirectionsList(
+                        mainNodeSequence.value,
+                        mainNodeKms.value,
+                        mainSequenceManeuvers.value!,
+                        mainSequenceExits.value!,
+                        nodeCoords,
+                        {
+                            headOnRoute: t('directions.headOnRoute'),
+                            turnLeft: t('directions.turnLeft'),
+                            turnRight: t('directions.turnRight'),
+                            keepLeft: t('directions.keepLeft'),
+                            keepRight: t('directions.keepRight'),
+                            takeExit: t('directions.takeExit'),
+                            exitAtRoundabout: t('directions.exitAtRoundabout'),
+                            roundaboutExit: (exitCount: number, suffix: string) =>
+                                t('directions.roundaboutExit')
+                                    .replace('{number}', String(exitCount))
+                                    .replace('{suffix}', suffix),
+                            arrived: t('directions.arrived'),
+                        },
+                    );
+                }
+
+                // Update nextTurnDistance after regenerating directions
+                if (fullRouteDirections.value.length > 1) {
+                    const upcomingTurn = fullRouteDirections.value[1];
+                    if (upcomingTurn && upcomingTurn.cumulativeKm !== undefined) {
+                        const distKm = +upcomingTurn.cumulativeKm.toFixed(1);
+                        nextTurnDistance.value = Math.max(0, distKm);
+                    }
+                } else {
+                    nextTurnDistance.value = 0;
+                }
+
+                // Old main becomes new alt — store its raw data for potential swap-back
+                altNodeSequence.value = oldMainNodeSeq;
+                altNodeKms.value = oldMainNodeKms;
+                altSequenceManeuvers.value = oldMainManeuvers;
+                altSequenceExits.value = oldMainExits;
+
+                // Compute traffic delay for the old main (now alt) using stored sdkScale
                 const { trafficPoints } = useTrafficData();
                 const tp = trafficPoints.value || [];
                 if (oldMainPath) {
                     const oldMainTrafficInfo = calculateRouteTrafficInfo(tp, oldMainPath);
-                    const oldMainDelayMin = oldMainTrafficInfo ? Math.round(oldMainTrafficInfo.trafficDelayMinutes / (settings.value.selectedGame === "ats" ? 20 : 19)) : 0;
+                    const scale = lastSdkScale.value > 0 ? lastSdkScale.value : (settings.value.selectedGame === "ats" ? 20 : 19);
+                    const oldMainDelayMin = oldMainTrafficInfo ? Math.round(oldMainTrafficInfo.trafficDelayMinutes / scale) : 0;
                     altRouteTrafficDelay.value = oldMainDelayMin > 0 ? `+${oldMainDelayMin}m` : "";
                 } else {
                     altRouteTrafficDelay.value = "";
@@ -1653,13 +1741,64 @@ export const useRouteController = (
             if (altRouteStats.value) {
                 routeStatsCache.value = altRouteStats.value;
             }
-            
+
+            // Restore main raw data from alt (for correct directions)
+            mainNodeSequence.value = altNodeSequence.value;
+            mainNodeKms.value = altNodeKms.value;
+            mainSequenceManeuvers.value = altSequenceManeuvers.value;
+            mainSequenceExits.value = altSequenceExits.value;
+
+            // Regenerate directions for the alt route (now main)
+            if (mainNodeSequence.value.length > 0 && mainNodeKms.value) {
+                fullRouteDirections.value = generateDirectionsList(
+                    mainNodeSequence.value,
+                    mainNodeKms.value,
+                    mainSequenceManeuvers.value!,
+                    mainSequenceExits.value!,
+                    nodeCoords,
+                    {
+                        headOnRoute: t('directions.headOnRoute'),
+                        turnLeft: t('directions.turnLeft'),
+                        turnRight: t('directions.turnRight'),
+                        keepLeft: t('directions.keepLeft'),
+                        keepRight: t('directions.keepRight'),
+                        takeExit: t('directions.takeExit'),
+                        exitAtRoundabout: t('directions.exitAtRoundabout'),
+                        roundaboutExit: (exitCount: number, suffix: string) =>
+                            t('directions.roundaboutExit')
+                                .replace('{number}', String(exitCount))
+                                .replace('{suffix}', suffix),
+                        arrived: t('directions.arrived'),
+                    },
+                );
+            }
+
+            // Update nextTurnDistance after regenerating directions
+            if (fullRouteDirections.value.length > 1) {
+                const upcomingTurn = fullRouteDirections.value[1];
+                if (upcomingTurn && upcomingTurn.cumulativeKm !== undefined) {
+                    const distKm = +upcomingTurn.cumulativeKm.toFixed(1);
+                    nextTurnDistance.value = Math.max(0, distKm);
+                }
+            } else {
+                nextTurnDistance.value = 0;
+            }
+
+            // Redraw turn arrows with new directions
+            if (activeSettings.value.hasTurnNavigation && currentRoutePath.value) {
+                drawTurnArrows(fullRouteDirections.value, currentRoutePath.value);
+            }
+
             // Clear alternative route
             altRoutePath.value = null;
             altRouteEta.value = "";
             altRouteDistance.value = 0;
             altRouteStats.value = null;
-            
+            altNodeSequence.value = [];
+            altNodeKms.value = null;
+            altSequenceManeuvers.value = null;
+            altSequenceExits.value = null;
+
             // Redraw
             if (map.value) {
                 setMapLibreData(map.value, "route-line", "LineString", currentRoutePath.value, { color: activeSettings.value.routeColor });
