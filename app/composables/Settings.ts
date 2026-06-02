@@ -28,9 +28,12 @@ export interface GameProfile {
     voiceLanguage: string;
     voiceWarningCategories: {
         speeding: boolean;
+        turn_2km: boolean;
         turn_1km: boolean;
-        turn_200m: boolean;
+        turn_500m: boolean;
+        turn_now: boolean;
         traffic_ahead: boolean;
+        straight_long: boolean;
     };
 }
 
@@ -64,9 +67,12 @@ const DEFAULT_PROFILE: GameProfile = {
     voiceLanguage: "", // Will use system default if empty
     voiceWarningCategories: {
         speeding: true,
+        turn_2km: true,
         turn_1km: true,
-        turn_200m: true,
+        turn_500m: true,
+        turn_now: true,
         traffic_ahead: true,
+        straight_long: true,
     },
 };
 

@@ -286,6 +286,25 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                         <span style="font-size: 1.4rem;">{{ t("settings.voiceSpeeding") || "Speeding" }}</span>
                     </label>
 
+                    <!-- Turn Guidance Section Header -->
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0 4px 0; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px;">
+                        <Icon name="lucide:navigation" size="16" style="color: #a1a1aa;" />
+                        <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600;">
+                            {{ t("settings.voiceTurnGuidance") || "Turn Guidance" }}
+                        </span>
+                    </div>
+
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.turn_2km ?? true"
+                            @change="(e: any) => toggleVoiceCategory('turn_2km', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:arrow-right-circle" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTurn2km") || "Turn (2 km)" }}</span>
+                    </label>
+
                     <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
                         <input
                             type="checkbox"
@@ -300,12 +319,23 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                     <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
                         <input
                             type="checkbox"
-                            :checked="activeSettings.voiceWarningCategories?.turn_200m ?? true"
-                            @change="(e: any) => toggleVoiceCategory('turn_200m', e.target.checked)"
+                            :checked="activeSettings.voiceWarningCategories?.turn_500m ?? true"
+                            @change="(e: any) => toggleVoiceCategory('turn_500m', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:corner-down-right" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTurn500m") || "Turn (500 m)" }}</span>
+                    </label>
+
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.turn_now ?? true"
+                            @change="(e: any) => toggleVoiceCategory('turn_now', e.target.checked)"
                             style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
                         />
                         <Icon name="lucide:corner-right-up" size="18" />
-                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTurn200m") || "Turn (200 m)" }}</span>
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceTurnNow") || "Turn (final)" }}</span>
                     </label>
 
                     <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
@@ -317,6 +347,25 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                         />
                         <Icon name="lucide:car" size="18" />
                         <span style="font-size: 1.4rem;">{{ t("settings.voiceTraffic") || "Traffic Alert" }}</span>
+                    </label>
+
+                    <!-- Long Straight Section Header -->
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0 4px 0; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 4px;">
+                        <Icon name="lucide:arrow-up" size="16" style="color: #a1a1aa;" />
+                        <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600;">
+                            {{ t("settings.voiceStraightSection") || "Long Straight" }}
+                        </span>
+                    </div>
+
+                    <label class="voice-category-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 0;">
+                        <input
+                            type="checkbox"
+                            :checked="activeSettings.voiceWarningCategories?.straight_long ?? true"
+                            @change="(e: any) => toggleVoiceCategory('straight_long', e.target.checked)"
+                            style="width: 18px; height: 18px; accent-color: var(--theme-color); cursor: pointer;"
+                        />
+                        <Icon name="lucide:arrow-up" size="18" />
+                        <span style="font-size: 1.4rem;">{{ t("settings.voiceStraightLong") || "Straight (10+ km)" }}</span>
                     </label>
                 </div>
 

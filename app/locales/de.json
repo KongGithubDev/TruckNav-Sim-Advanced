@@ -107,8 +107,13 @@
         "voiceLanguage": "Sprachausgabe",
         "voiceNote": "Die Sprachausgabe liest in der ausgewählten App-Sprache vor. Für Thai-Stimme stelle die Sprache in den Allgemeinen Einstellungen auf Thai.",
         "voiceSpeeding": "Zu schnell",
+        "voiceTurnGuidance": "Abbiegeführung",
+        "voiceTurn2km": "Abbiegen (2 km)",
         "voiceTurn1km": "Abbiegen (1 km)",
-        "voiceTurn200m": "Abbiegen (200 m)",
+        "voiceTurn500m": "Abbiegen (500 m)",
+        "voiceTurnNow": "Abbiegen (jetzt)",
+        "voiceStraightSection": "Geradeaus",
+        "voiceStraightLong": "Geradeaus (10+ km)",
         "voiceTraffic": "Verkehrswarnung",
         "testVoice": "Test Stimme"
     },
@@ -129,6 +134,9 @@
     "warnings": {
         "speedLimitExceeded": "Warnung, Geschwindigkeitsüberschreitung",
         "trafficAhead": "Verkehrsstau voraus – mit {delay} Minuten Verzögerung rechnen",
+        "rerouting": "Route wird neu berechnet. Berechne neuen Weg.",
+        "nearingDestination": "Sie nähern sich Ihrem Ziel.",
+        "arrived": "Sie sind angekommen.",
         "testVoice": "Dies ist eine Test-Sprachnachricht. Wenn Sie dies hören, funktioniert Ihre Stimme."
     },
     "directions": {

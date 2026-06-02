@@ -16,11 +16,13 @@ export interface TrafficPlayer {
     mpId: number;
     playerId: number;
     serverId: number;
+    speed?: number;
 }
 
 export interface TrafficPoint {
     coordinates: [number, number];
     weight: number;
+    speed?: number; // 0-1 normalized speed (0=stopped, 1=full speed)
 }
 
 export interface RouteTrafficInfo {
@@ -43,6 +45,27 @@ const trafficEnabled = ref(false);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let currentMap: MapLibreGl | null = null;
 let currentGame: GameType = "ets2";
+
+// Track player positions across polls to calculate approximate speed
+interface PositionRecord {
+    x: number;       // game-space X
+    y: number;       // game-space Y
+    time: number;    // timestamp
+}
+const playerHistory = new Map<number, PositionRecord>();
+
+// Game coords displacement → approximate km/h (ETS2/ATS scale)
+// At 90 km/h, a truck moves ~0.025 game-units per second
+// So displacement per polling interval (10s): ~0.25 units at 90 km/h
+function estimateSpeedKph(gameUnitsPerSec: number): number {
+    // ~90 km/h ≈ 0.025 units/sec → speedKph = gameUnitsPerSec * (90 / 0.025)
+    return gameUnitsPerSec * 3600;
+}
+
+function speedToScore(speedKph: number): number {
+    // Normalize to 0-1: 0=stopped, 1=≥90 km/h
+    return Math.min(speedKph / 90, 1);
+}
 
 function distanceToSegment(
     point: [number, number],
@@ -91,19 +114,64 @@ export function calculateRouteTrafficInfo(
 
     const SAMPLE_STEP = 15; // Sample every 15 route points (~750m at 50m/point)
     const totalSegments = routePath.length - 1;
-    const routeColors: string[] = new Array(totalSegments).fill(null);        let totalPlayersOnRoute = 0;
+    const routeColors: string[] = new Array(totalSegments).fill(null);
+    let totalPlayersOnRoute = 0;
     let congestedSegmentsCount = 0;
     let cumulativeDelayMin = 0;
 
-    // Gradual delay function based on player density per sample (~750m stretch)
-    // Light (2-4):  0.3–0.9 min    — slight slowdown
-    // Medium (5-11): 1.5–5.1 min   — significant slowdown
-    // Heavy (≥12):   6.1+ min       — stop-and-go
-    function sampleDelayMinutes(playerCount: number): number {
-        if (playerCount <= 1) return 0;
-        if (playerCount <= 4) return (playerCount - 1) * 0.3;
-        if (playerCount <= 11) return 0.9 + (playerCount - 4) * 0.6;
-        return 5.1 + (playerCount - 11) * 1.0;
+    // Gradual delay function based on player density AND speed per sample (~750m stretch)
+    // playerCount: number of nearby players
+    // avgSpeed: 0-1 score (0=stopped, 1=≥90 km/h)
+    function sampleDelayMinutes(playerCount: number, avgSpeed?: number): number {
+        // Base delay from density
+        let delay: number;
+        if (playerCount <= 1) delay = 0;
+        else if (playerCount <= 4) delay = (playerCount - 1) * 0.3;
+        else if (playerCount <= 11) delay = 0.9 + (playerCount - 4) * 0.6;
+        else delay = 5.1 + (playerCount - 11) * 1.0;
+
+        // If speed data available: adjust delay — slower = more delay, faster = less delay
+        if (avgSpeed !== undefined && playerCount > 1) {
+            // speedFactor: 1.5x delay when stopped, 0.5x delay when full speed
+            const speedFactor = 1.5 - avgSpeed;
+            delay = delay * Math.max(speedFactor, 0.3);
+        }
+
+        return delay;
+    }
+
+    function computeTrafficColor(playersNear: number, avgSpeed?: number): { color: string | null; isCongested: boolean } {
+        // With speed data: adjust thresholds by speed
+        // Slower speed = more sensitive (thresholds lowered by up to 2x)
+        // Full speed = original thresholds (avoids false red on busy highways)
+        if (avgSpeed !== undefined) {
+            const speedAdj = 0.5 + avgSpeed * 0.5; // 0.5 (stopped) → 1.0 (full speed)
+            const redThreshold = Math.round(12 * speedAdj);   // 6 → 12
+            const oraThreshold = Math.round(5 * speedAdj);    // 3 → 5
+
+            if (playersNear >= redThreshold) {
+                return { color: "#f44336", isCongested: true };
+            }
+            if (playersNear >= oraThreshold) {
+                return { color: "#ff9800", isCongested: false };
+            }
+            if (playersNear >= 2) {
+                return { color: "#4caf50", isCongested: false };
+            }
+            return { color: null, isCongested: false };
+        }
+
+        // Fallback: count only (original logic — no speed data available)
+        if (playersNear >= 12) {
+            return { color: "#f44336", isCongested: true };
+        }
+        if (playersNear >= 5) {
+            return { color: "#ff9800", isCongested: false };
+        }
+        if (playersNear >= 2) {
+            return { color: "#4caf50", isCongested: false };
+        }
+        return { color: null, isCongested: false };
     }
 
     // Sample route at intervals and paint surrounding segments
@@ -111,28 +179,30 @@ export function calculateRouteTrafficInfo(
         const samplePt = routePath[s]!;
 
         let playersNear = 0;
+        let speedSum = 0;
+        let speedCount = 0;
+
         for (const pt of points) {
             const dx = pt.coordinates[0] - samplePt[0];
             const dy = pt.coordinates[1] - samplePt[1];
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < radius) {
                 playersNear++;
+                if (pt.speed !== undefined) {
+                    speedSum += pt.speed;
+                    speedCount++;
+                }
             }
         }
 
-        // Accumulate gradual delay (continuous, not binary)
-        cumulativeDelayMin += sampleDelayMinutes(playersNear);
+        const avgSpeed = speedCount > 0 ? speedSum / speedCount : undefined;
 
-        // Determine color for this chunk
-        let color: string | null = null;
-        if (playersNear >= 12) {
-            color = "#f44336"; // Red (Heavy)
-            congestedSegmentsCount++;
-        } else if (playersNear >= 5) {
-            color = "#ff9800"; // Orange (Medium)
-        } else if (playersNear >= 2) {
-            color = "#4caf50"; // Green (Light)
-        }
+        // Accumulate gradual delay (continuous, not binary)
+        cumulativeDelayMin += sampleDelayMinutes(playersNear, avgSpeed);
+
+        // Determine color for this chunk using count + speed
+        const { color, isCongested } = computeTrafficColor(playersNear, avgSpeed);
+        if (isCongested) congestedSegmentsCount++;
 
         totalPlayersOnRoute += playersNear;
 
@@ -229,7 +299,29 @@ async function fetchTrafficData(
             mpId: p.MpId,
             playerId: p.PlayerId,
             serverId: p.ServerId,
+            speed: undefined // Will be calculated from position history below
         }));
+
+        // Calculate speed from position history (polling every 10s)
+        // Uses MpId (permanent TruckersMP ID) as key — more reliable than session-based PlayerId
+        const now = Date.now();
+        for (const p of players) {
+            const prev = playerHistory.get(p.mpId);
+            if (prev && now - prev.time < 30000) {
+                const dt = (now - prev.time) / 1000; // time delta in seconds
+                if (dt > 0.5) {
+                    const dist = Math.sqrt((p.x - prev.x) ** 2 + (p.y - prev.y) ** 2);
+                    const speedKph = estimateSpeedKph(dist / dt);
+                    p.speed = speedToScore(speedKph);
+                }
+            }
+            playerHistory.set(p.mpId, { x: p.x, y: p.y, time: now });
+        }
+
+        // Clean stale history entries (> 5 min)
+        for (const [id, rec] of playerHistory) {
+            if (now - rec.time > 300000) playerHistory.delete(id);
+        }
 
         const geoPlayers = players.map((p) => {
             const geo =
@@ -241,7 +333,8 @@ async function fetchTrafficData(
 
         const newPoints = geoPlayers.map(p => ({
             coordinates: [p.x, p.y] as [number, number],
-            weight: 1
+            weight: 1,
+            speed: p.speed,
         }));
 
         // Merge with existing points if fetching route bbox (avoid duplicates by mpId)

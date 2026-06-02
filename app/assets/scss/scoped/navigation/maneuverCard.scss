@@ -53,7 +53,36 @@
 .turn-info {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     line-height: 1.23;
     margin-bottom: 0.4rem;
     padding: 0.6rem 1.4rem;
+}
+
+.instruction-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 65%;
+
+    p {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.exit-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    background: var(--badge-color, var(--theme-color));
+    opacity: 0.9;
+    line-height: 1.4;
+    letter-spacing: 0.3px;
 }

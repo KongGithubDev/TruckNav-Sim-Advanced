@@ -107,8 +107,13 @@
         "voiceLanguage": "Voice Language",
         "voiceNote": "Voice reads aloud the app's selected language. For Thai voice, set Language to Thai in General settings.",
         "voiceSpeeding": "Speeding",
+        "voiceTurnGuidance": "Turn Guidance",
+        "voiceTurn2km": "Turn (2 km)",
         "voiceTurn1km": "Turn (1 km)",
-        "voiceTurn200m": "Turn (200 m)",
+        "voiceTurn500m": "Turn (500 m)",
+        "voiceTurnNow": "Turn (final)",
+        "voiceStraightSection": "Long Straight",
+        "voiceStraightLong": "Straight (10+ km)",
         "voiceTraffic": "Traffic Alert",
         "testVoice": "Test Voice"
     },
@@ -129,6 +134,9 @@
     "warnings": {
         "speedLimitExceeded": "Warning, speed limit exceeded",
         "trafficAhead": "Traffic ahead – expect a {delay}-minute delay",
+        "rerouting": "Rerouting. Calculating a new path.",
+        "nearingDestination": "You are approaching your destination.",
+        "arrived": "You have arrived.",
         "testVoice": "This is a test voice message. If you hear this, your voice is working."
     },
     "directions": {

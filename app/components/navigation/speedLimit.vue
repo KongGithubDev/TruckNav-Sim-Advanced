@@ -16,7 +16,7 @@ const { speakWarning } = useVoiceWarnings();
 const { t } = useTranslations();
 
 watch(
-    () => props.truckSpeed > props.speedLimit + 5 && props.speedLimit > 0,
+    () => props.truckSpeed > props.speedLimit * 1.05 && props.speedLimit > 0,
     (isSpeeding) => {
         if (isSpeeding) {
             // Speak a warning (with 15s cooldown)
@@ -39,7 +39,7 @@ watch(
     >
         <Transition name="over-limit">
             <div
-                v-if="truckSpeed > speedLimit + 5"
+                v-if="truckSpeed > speedLimit * 1.05"
                 class="speed-limit-over-limit"
                 :class="settings.selectedGame === 'ets2' ? 'circle' : 'square'"
             >

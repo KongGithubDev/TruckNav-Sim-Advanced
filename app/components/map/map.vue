@@ -7,6 +7,7 @@ import { blendWithBg, lightenColor } from "~/assets/utils/shared/colors";
 import { generateTruckIcon } from "~/assets/utils/map/markers";
 import type { CityData } from "~/composables/useCitySearch";
 import { convertEts2ToGeo, convertAtsToGeo } from "~/assets/utils/map/converters";
+import { buildVoiceDirection, buildCombinedVoiceDirection } from "~/assets/utils/routing/directions";
 import { cleanupMapLibre } from "~/composables/MapLibre";
 
 defineProps<{ goHome: () => void }>();
@@ -134,9 +135,15 @@ const { activeSettings, settings } = useSettings();
 const { t } = useTranslations();
 const { speakWarning } = useVoiceWarnings();
 
-let spoken1km = false;
-let spoken200m = false;
-let currentInstruction = "";
+// Multi-tier voice direction state
+let spokenTiers = {
+    tier_2km: false,
+    tier_1km: false,
+    tier_500m: false,
+    tier_now: false,
+};
+let spokenStraight = false;
+let currentVoiceStepId = -1;
 const isInOverviewMode = ref(false);
 let lastCongestedSegments = 0;
 
@@ -154,23 +161,97 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
     }
 
     if (!activeSettings.value.voiceWarnings) return;
-    const nextInstruction = dirs[1]?.text;
-    if (!nextInstruction) return;
+    const nextStep = dirs[1];
+    if (!nextStep || nextStep.type === "destination") return;
 
-    if (nextInstruction !== currentInstruction) {
-        currentInstruction = nextInstruction;
-        spoken1km = false;
-        spoken200m = false;
+    // Reset spoken tiers when the turn changes (compare by step id)
+    if (nextStep.id !== currentVoiceStepId) {
+        currentVoiceStepId = nextStep.id;
+        spokenTiers = {
+            tier_2km: false,
+            tier_1km: false,
+            tier_500m: false,
+            tier_now: false,
+        };
+        spokenStraight = false;
     }
 
-    if (dist > 0 && dist < 1.0 && !spoken1km) {
-        speakWarning('turn_1km', nextInstruction, 5);
-        spoken1km = true;
+    const locale = settings.value.locale || "en";
+
+    // Check if second-to-next turn is nearby for combined instructions
+    const secondStep = dirs[2];
+    const gapKm = secondStep?.cumulativeKm != null && dirs[1]?.cumulativeKm != null
+        ? secondStep.cumulativeKm - dirs[1].cumulativeKm
+        : Infinity;
+    const hasNearbyTurn = secondStep && gapKm < 0.5 && secondStep.type !== "destination";
+
+    // Long straight announcement — speak once when entering a stretch > 10km
+    // Mirrors the ManeuverCard UI: exit prefix > destination > plain
+    if (dist > 10 && !spokenStraight) {
+        const roundedKm = dist >= 50 ? Math.round(dist / 10) * 10 : Math.round(dist / 5) * 5;
+        const dest = destinationName.value;
+        let straightMsg: string;
+
+        // Priority 1: exit prefix (e.g. "Take exit 23, then continue straight for 45 kilometers")
+        if (nextStep.type === "exit-highway" && nextStep.exitCount) {
+            if (locale === "th") {
+                straightMsg = `ออกทางออกที่ ${nextStep.exitCount} แล้วตรงไปอีก ${roundedKm} กิโลเมตร`;
+            } else if (locale === "de") {
+                straightMsg = `Nehmen Sie Ausfahrt ${nextStep.exitCount}, dann geradeaus weiter für ${roundedKm} Kilometer`;
+            } else {
+                straightMsg = `Take exit ${nextStep.exitCount}, then continue straight for ${roundedKm} kilometers`;
+            }
+        }
+        // Priority 2: destination city name (e.g. "Continue towards Frankfurt for 45 kilometers")
+        else if (dest) {
+            if (locale === "th") {
+                straightMsg = `ตรงไป${dest}อีก ${roundedKm} กิโลเมตร`;
+            } else if (locale === "de") {
+                straightMsg = `Weiter in Richtung ${dest} für ${roundedKm} Kilometer`;
+            } else {
+                straightMsg = `Continue towards ${dest} for ${roundedKm} kilometers`;
+            }
+        }
+        // Priority 3: plain fallback
+        else {
+            if (locale === "th") {
+                straightMsg = `ตรงไปอีก ${roundedKm} กิโลเมตร`;
+            } else if (locale === "de") {
+                straightMsg = `Geradeaus weiter für ${roundedKm} Kilometer`;
+            } else {
+                straightMsg = `Continue straight for ${roundedKm} kilometers`;
+            }
+        }
+
+        speakWarning('straight_long', straightMsg, 60);
+        spokenStraight = true;
     }
-    
-    if (dist > 0 && dist < 0.2 && !spoken200m) {
-        speakWarning('turn_200m', nextInstruction, 5);
-        spoken200m = true;
+
+    // Multi-tier Google Maps style announcements
+    // Each tier has both lower and upper bounds to prevent cascade firing
+    if (dist >= 0.7 && dist < 1.5 && !spokenTiers.tier_2km) {
+        const msg = hasNearbyTurn
+            ? buildCombinedVoiceDirection(nextStep, secondStep!, dist, locale)
+            : buildVoiceDirection(nextStep, dist, locale);
+        speakWarning('turn_2km', msg, 20);
+        spokenTiers.tier_2km = true;
+    }
+    if (dist >= 0.3 && dist < 0.7 && !spokenTiers.tier_1km) {
+        const msg = hasNearbyTurn
+            ? buildCombinedVoiceDirection(nextStep, secondStep!, dist, locale)
+            : buildVoiceDirection(nextStep, dist, locale);
+        speakWarning('turn_1km', msg, 20);
+        spokenTiers.tier_1km = true;
+    }
+    if (dist >= 0.08 && dist < 0.3 && !spokenTiers.tier_500m) {
+        const msg = buildVoiceDirection(nextStep, dist, locale);
+        speakWarning('turn_500m', msg, 20);
+        spokenTiers.tier_500m = true;
+    }
+    if (dist > 0 && dist < 0.08 && !spokenTiers.tier_now) {
+        const msg = buildVoiceDirection(nextStep, dist, locale);
+        speakWarning('turn_now', msg, 5);
+        spokenTiers.tier_now = true;
     }
 });
 
@@ -187,6 +268,9 @@ const {
     routeTrafficInfo,
 } = useTrafficData();
 
+// Track previous reroute state for rising-edge detection
+let wasRerouting = false;
+
 // Traffic Alert Voice
 watch(routeTrafficInfo, (info) => {
     if (!info || !activeSettings.value.voiceWarnings) return;
@@ -197,6 +281,44 @@ watch(routeTrafficInfo, (info) => {
         speakWarning('traffic_ahead', msg, 120);
     }
     lastCongestedSegments = segments;
+});
+
+// Reroute Voice — speak when rerouting starts (rising edge)
+watch(isReroutingRoute, (isRerouting) => {
+    if (isRerouting && !wasRerouting && activeSettings.value.voiceWarnings) {
+        const msg = t('warnings.rerouting');
+        speakWarning('rerouting', msg, 60);
+    }
+    wasRerouting = isRerouting;
+});
+
+// Arrival Voice — nearing destination (~500m)
+let spokenNearingDest = false;
+watch([routeDistance, isRouteActive], ([dist, isActive]) => {
+    if (!isActive) {
+        spokenNearingDest = false;
+        return;
+    }
+    if (!activeSettings.value.voiceWarnings) return;
+    if (!spokenNearingDest && dist > 0 && dist <= 0.5) {
+        const msg = t('warnings.nearingDestination');
+        speakWarning('arrival_near', msg, 300);
+        spokenNearingDest = true;
+    }
+});
+
+// Arrival Voice — arrived at destination (isRouteActive falling edge)
+// Only speaks when remaining distance was very small, to distinguish from manual cancel
+let wasRouteActive = false;
+watch(isRouteActive, (isActive) => {
+    if (wasRouteActive && !isActive && activeSettings.value.voiceWarnings) {
+        // If distance was still large, user cancelled manually — don't say "arrived"
+        if (routeDistance.value < 0.1) {
+            const msg = t('warnings.arrived');
+            speakWarning('arrival', msg, 300);
+        }
+    }
+    wasRouteActive = isActive;
 });
 
 let uiTimer: ReturnType<typeof setTimeout> | null = null;
@@ -288,7 +410,7 @@ watch(
 
         const destination = activeSettings.value.lastDestination;
 
-        if (destination && !isRouteActive.value && !isCalculatingRoute.value) {
+        if (destination && !isRouteActive.value && !isCalculatingRoute.value && !routeSelectionMode.value) {
             handleRouteClick(
                 destination,
                 truckCoords.value,
@@ -692,6 +814,7 @@ const onCancelRoute = () => {
                         :next-instruction="
                             fullRouteDirections[1]?.text || t('map.followRoute')
                         "
+                        :destination-name="destinationName"
                     />
 
                     <NotificationGeneral

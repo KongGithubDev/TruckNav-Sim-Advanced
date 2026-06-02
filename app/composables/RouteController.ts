@@ -72,7 +72,16 @@ export const useRouteController = (
     const routeFound = ref<boolean | null>(null);
 
     const currentRouteIndex = ref(0);
+    /** Smooth float index for visually animating the route line split point */
+    const visualProgress = ref(0);
+    let lastDrawnVisualIndex = -1;
     const isWorkerReady = ref(false);
+
+    /** Route line opacity for fade transitions during reroute */
+    const routeOpacity = ref(1);
+    const altRouteOpacity = ref(0.7);
+    let routeAnimFrame: number | null = null;
+    let progressPulseFrame: number | null = null;
 
     const fullRouteDirections = ref<DirectionStep[]>([]);
     const nextTurnDistance = ref<number>(0);
@@ -97,8 +106,48 @@ export const useRouteController = (
                     newColor,
                 );
             }
+            // Also update progress marker colors to match
+            if (map.value && map.value.getLayer("route-progress-glow")) {
+                map.value.setPaintProperty("route-progress-glow", "circle-color", newColor);
+            }
+            if (map.value && map.value.getLayer("route-progress-dot")) {
+                map.value.setPaintProperty("route-progress-dot", "circle-color", newColor);
+            }
         },
     );
+
+    // Animate route and passed-line opacity for smooth fade transitions
+    watch(routeOpacity, (opacity) => {
+        if (!map.value) return;
+        if (map.value.getLayer("route-line")) {
+            map.value.setPaintProperty("route-line", "line-opacity", opacity);
+        }
+        if (map.value.getLayer("route-passed-line")) {
+            map.value.setPaintProperty("route-passed-line", "line-opacity", opacity);
+        }
+        // Also fade the progress marker with the route
+        if (map.value.getLayer("route-progress-glow")) {
+            map.value.setPaintProperty("route-progress-glow", "circle-opacity", opacity * 0.3);
+        }
+        if (map.value.getLayer("route-progress-dot")) {
+            map.value.setPaintProperty("route-progress-dot", "circle-opacity", opacity);
+        }
+    });
+
+    // Animate alt route line opacity
+    watch(altRouteOpacity, (opacity) => {
+        if (!map.value) return;
+        if (map.value.getLayer("alt-route-line")) {
+            map.value.setPaintProperty("alt-route-line", "line-opacity", opacity);
+        }
+        // Also fade the alt progress marker with the alt route
+        if (map.value.getLayer("alt-route-progress-glow")) {
+            map.value.setPaintProperty("alt-route-progress-glow", "circle-opacity", opacity * 0.2);
+        }
+        if (map.value.getLayer("alt-route-progress-dot")) {
+            map.value.setPaintProperty("alt-route-progress-dot", "circle-opacity", opacity * 0.6);
+        }
+    });
 
     watch(
         () => activeSettings.value.hasTurnNavigation,
@@ -473,6 +522,68 @@ export const useRouteController = (
         return null;
     }
 
+    function startProgressPulse() {
+        if (progressPulseFrame !== null) return; // Already running
+
+        function frame(now: number) {
+            if (!map.value || !map.value.getLayer("route-progress-glow")) {
+                stopProgressPulse();
+                return;
+            }
+
+            // Calculate base radius at current zoom (lerp 14→18 between zoom 10→12)
+            const zoom = map.value.getZoom();
+            const t = Math.max(0, Math.min((zoom - 10) / 2, 1));
+            const baseRadius = 14 + (18 - 14) * t;
+
+            // Sine oscillation: ~1.5 Hz, amplitude ±3px
+            const pulse = Math.sin(now * 0.003 * Math.PI); // period ≈ 667ms
+            const radius = baseRadius + pulse * 3;
+
+            map.value.setPaintProperty("route-progress-glow", "circle-radius", radius);
+            progressPulseFrame = requestAnimationFrame(frame);
+        }
+
+        progressPulseFrame = requestAnimationFrame(frame);
+    }
+
+    function stopProgressPulse() {
+        if (progressPulseFrame !== null) {
+            cancelAnimationFrame(progressPulseFrame);
+            progressPulseFrame = null;
+        }
+    }
+
+    function animateRouteOpacity(target: number, duration: number = 300): Promise<void> {
+        return new Promise((resolve) => {
+            if (routeAnimFrame !== null) {
+                cancelAnimationFrame(routeAnimFrame);
+                routeAnimFrame = null;
+            }
+
+            const start = performance.now();
+            const startOpacity = routeOpacity.value;
+
+            function frame(now: number) {
+                const elapsed = now - start;
+                const t = Math.min(elapsed / duration, 1);
+                // Cubic ease-out
+                const eased = 1 - Math.pow(1 - t, 3);
+                routeOpacity.value = startOpacity + (target - startOpacity) * eased;
+
+                if (t < 1) {
+                    routeAnimFrame = requestAnimationFrame(frame);
+                } else {
+                    routeOpacity.value = target;
+                    routeAnimFrame = null;
+                    resolve();
+                }
+            }
+
+            routeAnimFrame = requestAnimationFrame(frame);
+        });
+    }
+
     async function findFlexibleRoute(
         startNodeId: number,
         targetCoords: [number, number],
@@ -690,6 +801,85 @@ export const useRouteController = (
             },
             "all-sprites",
         );
+
+        // Progress marker — a glowing dot that moves along the route path
+        map.value.addSource("route-progress-marker", {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+        });
+        
+        // Outer glow layer
+        map.value.addLayer({
+            id: "route-progress-glow",
+            type: "circle",
+            source: "route-progress-marker",
+            paint: {
+                "circle-radius": [
+                    "interpolate", ["linear"], ["zoom"],
+                    10, 14, 12, 18,
+                ],
+                "circle-color": activeSettings.value.routeColor,
+                "circle-opacity": 0.25,
+                "circle-blur": 2,
+            },
+        });
+        
+        // Inner solid dot with white stroke
+        map.value.addLayer({
+            id: "route-progress-dot",
+            type: "circle",
+            source: "route-progress-marker",
+            paint: {
+                "circle-radius": [
+                    "interpolate", ["linear"], ["zoom"],
+                    10, 6, 12, 8,
+                ],
+                "circle-color": activeSettings.value.routeColor,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-width": [
+                    "interpolate", ["linear"], ["zoom"],
+                    10, 2, 12, 3,
+                ],
+                "circle-opacity": 1,
+            },
+        });
+
+        // Alt route progress marker — a smaller grey dot showing proportional position on alt route
+        map.value.addSource("alt-route-progress-marker", {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+        });
+        
+        // Alt route glow
+        map.value.addLayer({
+            id: "alt-route-progress-glow",
+            type: "circle",
+            source: "alt-route-progress-marker",
+            paint: {
+                "circle-radius": [
+                    "interpolate", ["linear"], ["zoom"],
+                    10, 10, 12, 13,
+                ],
+                "circle-color": "#6b7a8d",
+                "circle-opacity": 0.2,
+                "circle-blur": 1.5,
+            },
+        });
+        
+        // Alt route solid dot (smaller, no white stroke, semi-transparent)
+        map.value.addLayer({
+            id: "alt-route-progress-dot",
+            type: "circle",
+            source: "alt-route-progress-marker",
+            paint: {
+                "circle-radius": [
+                    "interpolate", ["linear"], ["zoom"],
+                    10, 4, 12, 5.5,
+                ],
+                "circle-color": "#6b7a8d",
+                "circle-opacity": 0.6,
+            },
+        });
 
         if (!map.value.getSource("destination-source")) {
             map.value.addSource("destination-source", {
@@ -942,6 +1132,9 @@ export const useRouteController = (
                 }
 
                 currentRouteIndex.value = 0;
+                visualProgress.value = 0;
+                lastDrawnVisualIndex = -1;
+                lastRecalcTime.value = Date.now(); // Prevent immediate deviation retrigger
                 updateProfile("lastDestination", savedDestination.value);
 
                 // Use the alternative route already computed by the worker (edge-exclusion method)
@@ -1019,6 +1212,8 @@ export const useRouteController = (
                     // No meaningful alternative - activate main route immediately
                     isRouteActive.value = true;
                     routeFound.value = true;
+                    // Start the progress glow pulse animation
+                    startProgressPulse();
 
                     if (activeSettings.value.hasTurnNavigation) {
                         drawTurnArrows(
@@ -1076,7 +1271,22 @@ export const useRouteController = (
             }
         }
 
-        currentRouteIndex.value = bestIndex;
+        // Monotonic progress: only move forward (prevents oscillation jitter)
+        if (bestIndex > currentRouteIndex.value) {
+            currentRouteIndex.value = bestIndex;
+        } else if (bestIndex < currentRouteIndex.value - 5) {
+            // Allow large backward jumps (reroute from different path point)
+            currentRouteIndex.value = bestIndex;
+        }
+
+        // Smooth visual progress using exponential moving average
+        // This creates a smooth creeping effect between path points
+        if (visualProgress.value === 0 && currentRouteIndex.value > 0) {
+            // Initialize visual progress to current index on first meaningful update
+            visualProgress.value = currentRouteIndex.value;
+        } else {
+            visualProgress.value += (currentRouteIndex.value - visualProgress.value) * 0.35;
+        }
 
         let activeThreshold = DEVIATION_THRESHOLD_SQ;
 
@@ -1173,44 +1383,111 @@ export const useRouteController = (
             nextTurnDistance.value = 0;
         }
 
-        // Slice route path into passed and remaining sections
-        if (map.value && currentRoutePath.value && currentRoutePath.value.length > 0) {
-            const passedPath = currentRoutePath.value.slice(0, currentRouteIndex.value + 1);
-            const remainingPath = currentRoutePath.value.slice(currentRouteIndex.value);
-
-            if (passedPath.length > 1) {
-                setMapLibreData(map.value, "route-passed-line", "LineString", passedPath, { color: "#5a6a7c" });
+        // Update progress marker position at the exact closest point on the route to the truck
+        // Uses projectPointToSegment for accuracy instead of visualProgress-based interpolation
+        if (map.value && currentRoutePath.value && currentRoutePath.value.length > 1) {
+            const path = currentRoutePath.value;
+            // Small local search around currentRouteIndex for the closest segment to the truck
+            const searchStart = Math.max(0, currentRouteIndex.value - 2);
+            const searchEnd = Math.min(path.length - 1, currentRouteIndex.value + 3);
+            let bestSegIdx = currentRouteIndex.value;
+            let bestSegDist = getSqDistToSegment(truckCoords, path[bestSegIdx]!, path[bestSegIdx + 1]!);
+            for (let i = searchStart; i < searchEnd; i++) {
+                const d = getSqDistToSegment(truckCoords, path[i]!, path[i + 1]!);
+                if (d < bestSegDist) {
+                    bestSegDist = d;
+                    bestSegIdx = i;
+                }
             }
-            if (remainingPath.length > 1) {
-                // Preserve traffic congestion colors when redrawing the route on progress update
-                const { routeTrafficInfo } = useTrafficData();
-                const colors = routeTrafficInfo.value?.routeColors;
-                const fullPath = currentRoutePath.value;
-                if (colors && colors.length === fullPath.length - 1) {
-                    // Draw remaining path with per-segment traffic colors
-                    const remainingColors = colors.slice(currentRouteIndex.value);
-                    const features = [];
-                    for (let i = 0; i < remainingPath.length - 1; i++) {
-                        const props: any = {};
-                        if (remainingColors[i]) props.color = remainingColors[i];
-                        features.push({
+            // Project truck position onto the closest route segment for exact placement
+            const pos = projectPointToSegment(truckCoords, path[bestSegIdx]!, path[bestSegIdx + 1]!);
+            
+            const source = map.value.getSource("route-progress-marker") as GeoJSONSource;
+            if (source) {
+                source.setData({
+                    type: "FeatureCollection",
+                    features: [{
+                        type: "Feature",
+                        geometry: { type: "Point", coordinates: pos },
+                        properties: {},
+                    }],
+                });
+            }
+
+            // Update alt route progress marker at proportional position
+            const altPath = altRoutePath.value;
+            if (altPath && altPath.length > 1) {
+                const altRatio = visualProgress.value / (path.length - 1);
+                const altFloatIdx = altRatio * (altPath.length - 1);
+                const altIdx = Math.max(0, Math.min(Math.floor(altFloatIdx), altPath.length - 1));
+                const altFrac = altFloatIdx - altIdx;
+                const a1 = altPath[Math.min(altIdx, altPath.length - 1)]!;
+                const a2 = altPath[Math.min(altIdx + 1, altPath.length - 1)]!;
+                const altPos: [number, number] = [
+                    a1[0] + (a2[0] - a1[0]) * altFrac,
+                    a1[1] + (a2[1] - a1[1]) * altFrac,
+                ];
+
+                const altSource = map.value.getSource("alt-route-progress-marker") as GeoJSONSource;
+                if (altSource) {
+                    altSource.setData({
+                        type: "FeatureCollection",
+                        features: [{
                             type: "Feature",
-                            geometry: {
-                                type: "LineString",
-                                coordinates: [remainingPath[i], remainingPath[i + 1]],
-                            },
-                            properties: props,
-                        });
+                            geometry: { type: "Point", coordinates: altPos },
+                            properties: {},
+                        }],
+                    });
+                }
+            }
+        }
+
+        // Slice route path into passed and remaining sections
+        // Uses bestIndex (same as distance/ETA) so grey/blue split stays perfectly in sync
+        if (map.value && currentRoutePath.value && currentRoutePath.value.length > 0) {
+            const displayIndex = Math.min(bestIndex, currentRoutePath.value.length - 1);
+            
+            // Only update GeoJSON when the visual display index actually changes
+            if (displayIndex !== lastDrawnVisualIndex) {
+                lastDrawnVisualIndex = displayIndex;
+                
+                const passedPath = currentRoutePath.value.slice(0, displayIndex + 1);
+                const remainingPath = currentRoutePath.value.slice(displayIndex);
+
+                if (passedPath.length > 1) {
+                    setMapLibreData(map.value, "route-passed-line", "LineString", passedPath, { color: "#5a6a7c" });
+                }
+                if (remainingPath.length > 1) {
+                    // Preserve traffic congestion colors when redrawing the route on progress update
+                    const { routeTrafficInfo } = useTrafficData();
+                    const colors = routeTrafficInfo.value?.routeColors;
+                    const fullPath = currentRoutePath.value;
+                    if (colors && colors.length === fullPath.length - 1) {
+                        // Draw remaining path with per-segment traffic colors
+                        const remainingColors = colors.slice(displayIndex);
+                        const features = [];
+                        for (let i = 0; i < remainingPath.length - 1; i++) {
+                            const props: any = {};
+                            if (remainingColors[i]) props.color = remainingColors[i];
+                            features.push({
+                                type: "Feature",
+                                geometry: {
+                                    type: "LineString",
+                                    coordinates: [remainingPath[i], remainingPath[i + 1]],
+                                },
+                                properties: props,
+                            });
+                        }
+                        const source = map.value.getSource("route-line") as GeoJSONSource;
+                        if (source) {
+                            source.setData({
+                                type: "FeatureCollection",
+                                features: features as any,
+                            });
+                        }
+                    } else {
+                        setMapLibreData(map.value, "route-line", "LineString", remainingPath, { color: activeSettings.value.routeColor });
                     }
-                    const source = map.value.getSource("route-line") as GeoJSONSource;
-                    if (source) {
-                        source.setData({
-                            type: "FeatureCollection",
-                            features: features as any,
-                        });
-                    }
-                } else {
-                    setMapLibreData(map.value, "route-line", "LineString", remainingPath, { color: activeSettings.value.routeColor });
                 }
             }
         }
@@ -1229,19 +1506,26 @@ export const useRouteController = (
         }
 
         if (minSqDist > activeThreshold) {
-            if (!isCalculating.value && savedDestination.value) {
+            if (!isCalculating.value && !routeSelectionMode.value && savedDestination.value) {
                 lastRecalcTime.value = now;
                 console.log("Deviation detected! Recalculating...");
                 isRerouting.value = true;
-                handleRouteClick(
-                    toRaw(savedDestination.value),
-                    truckCoords,
-                    truckHeading,
-                    sdkScale,
-                    false,
-                    avgSpeed,
-                ).finally(() => {
-                    isRerouting.value = false;
+
+                // Fade out current route → recalculate → fade in new route
+                const dest = toRaw(savedDestination.value) as [number, number];
+                animateRouteOpacity(0, 250).then(() => {
+                    handleRouteClick(
+                        dest,
+                        truckCoords,
+                        truckHeading,
+                        sdkScale,
+                        false,
+                        avgSpeed,
+                    ).finally(() => {
+                        isRerouting.value = false;
+                        // Fade in the new route
+                        animateRouteOpacity(1, 300);
+                    });
                 });
                 return;
             }
@@ -1254,8 +1538,12 @@ export const useRouteController = (
         deleteMapLibreData(map.value, "route-line");
         deleteMapLibreData(map.value, "alt-route-line");
         deleteMapLibreData(map.value, "destination-source");
+        deleteMapLibreData(map.value, "route-progress-marker");
+        deleteMapLibreData(map.value, "alt-route-progress-marker");
         deleteMapLibreData(map.value, "turn-arrows-line-source");
         deleteMapLibreData(map.value, "turn-arrows-head-source");
+
+        stopProgressPulse();
 
         isRouteActive.value = false;
         routeSelectionMode.value = false;
@@ -1263,7 +1551,8 @@ export const useRouteController = (
         currentRoutePath.value = null;
         savedDestination.value = null;
         isYardStart.value = false;
-        fullRouteDirections.value = [];            altRoutePath.value = null;
+        fullRouteDirections.value = [];
+        altRoutePath.value = null;
         altRouteEta.value = "";
         altRouteDistance.value = 0;
         altRouteStats.value = null;
@@ -1273,6 +1562,14 @@ export const useRouteController = (
 
         nextTurnDistance.value = 0;
         lastMathPos.value = null;
+        lastDrawnVisualIndex = -1;
+        // Reset opacity for next route
+        routeOpacity.value = 1;
+        altRouteOpacity.value = 0.7;
+        if (routeAnimFrame !== null) {
+            cancelAnimationFrame(routeAnimFrame);
+            routeAnimFrame = null;
+        }
     }
 
         function confirmSelectedRoute(index: 0 | 1) {
@@ -1322,6 +1619,7 @@ export const useRouteController = (
             isRouteActive.value = true;
             routeFound.value = true;
             routeSelectionMode.value = false;
+            startProgressPulse();
         }
 
         function swapToAltRoute() {
@@ -1345,6 +1643,7 @@ export const useRouteController = (
             if (map.value) {
                 setMapLibreData(map.value, "route-line", "LineString", currentRoutePath.value, { color: activeSettings.value.routeColor });
                 deleteMapLibreData(map.value, "alt-route-line");
+                deleteMapLibreData(map.value, "alt-route-progress-marker");
             }
         }
 

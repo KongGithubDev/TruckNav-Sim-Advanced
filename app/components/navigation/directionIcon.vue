@@ -17,6 +17,7 @@ const props = defineProps<{
     activeColor?: string;
     exitCount?: number | undefined;
 }>();
+const { settings } = useSettings();
 </script>
 
 <template>
@@ -125,6 +126,15 @@ const props = defineProps<{
             class="exit-number"
             :class="{ 'is-active': active }"
         >
+            {{ exitCount }}
+        </span>
+
+        <span
+            v-if="props.type === 'exit-highway' && exitCount"
+            class="exit-number exit-highway-exit"
+            :class="{ 'is-active': active }"
+        >
+            <span class="exit-label-prefix">{{ settings?.locale === 'de' ? 'AUSFAHRT' : 'EXIT' }}</span>
             {{ exitCount }}
         </span>
     </div>

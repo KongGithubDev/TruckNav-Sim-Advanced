@@ -52,3 +52,20 @@
     pointer-events: none;
     line-height: 1;
 }
+
+.exit-highway-exit {
+    bottom: -10%;
+    right: auto;
+    left: 50%;
+    transform: translate(-50%, 0);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+
+    .exit-label-prefix {
+        font-size: 0.9rem;
+        font-weight: 700;
+        opacity: 0.6;
+        letter-spacing: 0.5px;
+    }
+}
