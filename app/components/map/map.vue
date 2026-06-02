@@ -118,7 +118,6 @@ const {
     redrawRouteWithTraffic,
     hasAltRoute,
     altRouteEta,
-    altRouteTrafficDelay,
     swapToAltRoute,
     routeSelectionMode,
     isAltDisplayedAsPrimary,
@@ -1054,10 +1053,6 @@ const onCancelRoute = () => {
                             <div class="alt-text-container">
                                 <span class="alt-label">{{ t('routeSelection.alternative') }}</span>
                                 <span class="alt-time">{{ altRouteEta }}</span>
-                                <span v-if="altRouteTrafficDelay" class="alt-traffic-badge">
-                                    <Icon name="lucide:alert-triangle" size="10" />
-                                    {{ altRouteTrafficDelay }}
-                                </span>
                             </div>
                         </div>
                     </Transition>

@@ -238,6 +238,13 @@ export const useRouteController = (
 
     }
 
+    /** Show "2h 15min" when ≥ 1h, "45min" when < 1h */
+    function formatEta(hours: number, minutes: number, trafficStr?: string): string {
+        let str = hours >= 1 ? `${hours}h ${minutes}min` : `${minutes}min`;
+        if (trafficStr) str += trafficStr;
+        return str;
+    }
+
     function projectPointToSegment(
         p: [number, number],
         v: [number, number],
@@ -1107,7 +1114,7 @@ export const useRouteController = (
                     trafficDelayStr = ` (+${Math.round(trafficDelayRealHours * 60)}m traffic)`;
                 }
                 
-                routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
+                routeEta.value = formatEta(h, m, trafficDelayStr);
 
                 // Compute real-world arrival clock time
                 const now = new Date();
@@ -1217,7 +1224,7 @@ export const useRouteController = (
                     if (altDelayMin > 0) {
                         altTrafficStr = ` (+${altDelayMin}m traffic)`;
                     }
-                    altRouteEta.value = `${aH}h ${aM}min${altTrafficStr}`;
+                    altRouteEta.value = formatEta(aH, aM, altTrafficStr);
 
                     // Main route traffic delay (from existing polling data) — uses granular weighted sum
                     const mainTrafficInfo = routeTrafficInfo.value;
@@ -1242,12 +1249,12 @@ export const useRouteController = (
                     // Use base ETA without traffic for selection card (traffic shown as badge separately)
                     const mainBaseH = Math.floor(totalRealHours);
                     const mainBaseM = Math.round((totalRealHours - mainBaseH) * 60);
-                    selectionMainEta.value = `${mainBaseH}h ${mainBaseM}min`;
+                    selectionMainEta.value = formatEta(mainBaseH, mainBaseM);
                     selectionAltDistance.value = altRouteDistance.value;
                     // Use base ETA without traffic for alt selection card (badge shows traffic separately)
                     const altBaseH = Math.floor(altRealHours);
                     const altBaseM = Math.round((altRealHours - altBaseH) * 60);
-                    selectionAltEta.value = `${altBaseH}h ${altBaseM}min`;
+                    selectionAltEta.value = formatEta(altBaseH, altBaseM);
 
                     // If alt route is faster (including traffic), swap display so faster shows first
                     isAltDisplayedAsPrimary.value = false;
@@ -1413,7 +1420,7 @@ export const useRouteController = (
                         trafficDelayStr = ` (+${Math.round(trafficDelayRealHours * 60)}m traffic)`;
                     }
                     
-                    routeEta.value = `${h}h ${m}min${trafficDelayStr}`;
+                    routeEta.value = formatEta(h, m, trafficDelayStr);
 
                     // Compute arrival time (including traffic)
                     const now = new Date();
