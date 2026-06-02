@@ -154,6 +154,7 @@
         "title": "Route wählen",
         "normal": "Normale Route",
         "trafficAvoid": "Stau vermeiden",
+        "alternative": "Alternative",
         "cancel": "Abbrechen",
 
         "normalDesc": "Standardroute",
