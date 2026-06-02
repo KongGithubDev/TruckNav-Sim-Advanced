@@ -1282,6 +1282,45 @@ export const useRouteController = (
                             minutes: selectionTimeDiff.value.minutes,
                             fasterLabel: 'main',
                         };
+
+                        // Swap map visuals: alt path becomes the primary route-line with traffic colors
+                        if (map.value) {
+                            const rawMap = toRaw(map.value);
+                            // Draw route-line (now showing alt path) with alt route's traffic congestion colors
+                            const altPath = altData.displayPath;
+                            const altColors = altTrafficInfo?.routeColors;
+                            if (altColors && altColors.length === altPath.length - 1) {
+                                const features = [];
+                                for (let i = 0; i < altPath.length - 1; i++) {
+                                    features.push({
+                                        type: "Feature",
+                                        geometry: { type: "LineString", coordinates: [altPath[i], altPath[i + 1]] },
+                                        properties: { color: altColors[i] || activeSettings.value.routeColor }
+                                    });
+                                }
+                                const source = rawMap.getSource("route-line") as GeoJSONSource;
+                                if (source) source.setData({ type: "FeatureCollection", features: features as any });
+                            } else {
+                                setMapLibreData(rawMap, "route-line", "LineString", toRaw(altPath), { color: activeSettings.value.routeColor });
+                            }
+                            // Draw alt-route-line (now showing main path) with main route's traffic congestion colors
+                            const mainPath = mainResult.displayPath;
+                            const mainColors = mainTrafficInfo?.routeColors;
+                            if (mainColors && mainColors.length === mainPath.length - 1) {
+                                const features = [];
+                                for (let i = 0; i < mainPath.length - 1; i++) {
+                                    features.push({
+                                        type: "Feature",
+                                        geometry: { type: "LineString", coordinates: [mainPath[i], mainPath[i + 1]] },
+                                        properties: { color: mainColors[i] || "#6b7a8d" }
+                                    });
+                                }
+                                const source = rawMap.getSource("alt-route-line") as GeoJSONSource;
+                                if (source) source.setData({ type: "FeatureCollection", features: features as any });
+                            } else {
+                                setMapLibreData(rawMap, "alt-route-line", "LineString", toRaw(mainPath));
+                            }
+                        }
                     }
 
                     // During rerouting, auto-select main route without showing selection card

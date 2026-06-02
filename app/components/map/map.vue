@@ -546,9 +546,11 @@ watch(
 watch(
     () => routeTrafficInfo.value?.routeColors,
     (colors) => {
-        // Apply traffic colors to the route whenever they update,
-        // even during route selection mode (before isRouteActive is true)
         if (!currentRoutePath.value) return;
+        // When display is swapped (alt shown as primary), the map visuals have
+        // been manually swapped — don't overwrite them with the main route's colors
+        if (isAltDisplayedAsPrimary.value) return;
+        // Apply traffic colors to the route whenever they update
         redrawRouteWithTraffic(colors || null);
     }
 );
@@ -813,7 +815,7 @@ const onCancelRoute = () => {
                         :wipers="wipers"
                     />
 
-                    <TrafficProgressBar />
+                    <TrafficProgressBar v-if="isRouteActive" />
                     <CurrentLocation :truck-coords="truckCoords" />
 
                     <div class="left-buttons">

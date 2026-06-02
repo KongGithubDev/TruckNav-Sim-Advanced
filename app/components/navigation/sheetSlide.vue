@@ -40,6 +40,12 @@ const cancelAutoStart = () => {
     progress.value = 0;
 };
 
+/** Cancel the auto-start timer AND stop the entire route navigation */
+const cancelRoute = () => {
+    cancelAutoStart();
+    props.onStopNavigation();
+};
+
 let rafId: number | null = null;
 const startSmoothTimer = () => {
     const duration = 5000;
@@ -172,7 +178,7 @@ onUnmounted(() => {
                         </span>
                     </button>
 
-                    <button v-show="countdown > 0" @click="cancelAutoStart">
+                    <button v-show="countdown > 0" @click="cancelRoute">
                         <Icon
                             name="lucide:x"
                             size="28"
