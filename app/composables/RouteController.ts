@@ -1226,8 +1226,8 @@ export const useRouteController = (
                     }
                     altRouteEta.value = formatEta(aH, aM, altTrafficStr);
 
-                    // Main route traffic delay (from existing polling data) — uses granular weighted sum
-                    const mainTrafficInfo = routeTrafficInfo.value;
+                    // Main route traffic delay — compute fresh from current traffic data (same snapshot as alt)
+                    const mainTrafficInfo = calculateRouteTrafficInfo(tp, currentRoutePath.value!);
                     const mainDelayMin = mainTrafficInfo ? Math.round(mainTrafficInfo.trafficDelayMinutes / sdkScale) : 0;
                     selectionMainTrafficDelay.value = mainDelayMin > 0 ? `+${mainDelayMin}m` : "";
 
