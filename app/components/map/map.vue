@@ -980,8 +980,8 @@ const onCancelRoute = () => {
                                             </div>
                                             <div class="route-option-info">
                                                 <div class="route-option-top">
-                                                    <span class="route-option-label">{{ isAltDisplayedAsPrimary ? t('routeSelection.trafficAvoid') : t('routeSelection.normal') }}</span>
-                                                    <span class="route-option-desc">{{ isAltDisplayedAsPrimary ? t('routeSelection.trafficAvoidDesc') : t('routeSelection.normalDesc') }}</span>
+                                                    <span class="route-option-label">{{ t('routeSelection.trafficAvoid') }}</span>
+                                                    <span class="route-option-desc">{{ t('routeSelection.trafficAvoidDesc') }}</span>
                                                 </div>
                                                 <div class="route-option-stats">
                                                     <span class="stat-eta">{{ selectionMainEta }}</span>
@@ -1013,8 +1013,8 @@ const onCancelRoute = () => {
                                             </div>
                                             <div class="route-option-info">
                                                 <div class="route-option-top">
-                                                    <span class="route-option-label">{{ isAltDisplayedAsPrimary ? t('routeSelection.normal') : t('routeSelection.trafficAvoid') }}</span>
-                                                    <span class="route-option-desc">{{ isAltDisplayedAsPrimary ? t('routeSelection.normalDesc') : t('routeSelection.trafficAvoidDesc') }}</span>
+                                                    <span class="route-option-label">{{ t('routeSelection.normal') }}</span>
+                                                    <span class="route-option-desc">{{ t('routeSelection.normalDesc') }}</span>
                                                 </div>
                                                 <div class="route-option-stats">
                                                     <span class="stat-eta">{{ selectionAltEta }}</span>
