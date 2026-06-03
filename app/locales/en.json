@@ -109,6 +109,7 @@
         "weatherOverlay": "Weather Overlay (rain/snow/fog)",
         "voice": "Voice",
         "plugin": "Plugin",
+        "data": "Data",
         "trafficServer": "Traffic Server",
         "truckMarkerSize": "Truck Marker Size",
         "units": "Units",

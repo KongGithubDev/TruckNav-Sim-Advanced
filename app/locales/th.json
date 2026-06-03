@@ -109,6 +109,7 @@
         "weatherOverlay": "สภาพอากาศ (ฝน/หิมะ/หมอก)",
         "voice": "เสียง",
         "plugin": "ปลั๊กอิน",
+        "data": "ข้อมูล",
         "trafficServer": "เซิร์ฟเวอร์จราจร",
         "truckMarkerSize": "ขนาดไอคอนรถบรรทุก",
         "units": "หน่วยวัด",

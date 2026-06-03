@@ -109,6 +109,7 @@
         "weatherOverlay": "Wetterüberlagerung (Regen/Schnee/Nebel)",
         "voice": "Sprache",
         "plugin": "Plugin",
+        "data": "Daten",
         "trafficServer": "Verkehrsserver",
         "truckMarkerSize": "Truck Marker Größe",
         "units": "Einheiten",
