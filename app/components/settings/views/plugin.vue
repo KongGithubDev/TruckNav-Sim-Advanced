@@ -18,8 +18,10 @@ const startMinimized = computed(() => desktopSettings.value.startMinimized);
 
 async function checkBridge() {
     bridgeStatus.value = "checking";
+    // Use the same IP logic as the actual telemetry connection
+    const ip = settings.value.savedIP || window.location.hostname || "127.0.0.1";
     try {
-        const running = await isBridgeRunning("127.0.0.1");
+        const running = await isBridgeRunning(ip);
         bridgeStatus.value = running ? "connected" : "disconnected";
     } catch {
         bridgeStatus.value = "disconnected";
