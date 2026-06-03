@@ -222,12 +222,12 @@ function toggleAvoidFerries() {
 
         <div class="small-separator"></div>
 
-        <!-- Traffic & Weather Section -->
+        <!-- Traffic Section -->
         <div class="option setting" style="padding-top: 4px; padding-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <Icon name="lucide:cloud-sun" size="18" style="color: #a1a1aa;" />
+                <Icon name="lucide:traffic-cone" size="18" style="color: #a1a1aa;" />
                 <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                    Traffic & Weather
+                    Traffic
                 </span>
             </div>
         </div>

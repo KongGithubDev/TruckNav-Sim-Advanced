@@ -1049,6 +1049,11 @@ const onCancelRoute = () => {
                         </HudButton>
                     </div>
 
+                    <SpeedAlertOverlay
+                        :truck-speed="truckSpeed"
+                        :speed-limit="speedLimit"
+                    />
+
                     <SpeedLimit
                         v-show="
                             speedLimit > 0 &&
