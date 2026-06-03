@@ -108,6 +108,7 @@
         "traffic": "Verkehrsschicht (TruckersMP)",
         "weatherOverlay": "Wetterüberlagerung (Regen/Schnee/Nebel)",
         "voice": "Sprache",
+        "plugin": "Plugin",
         "trafficServer": "Verkehrsserver",
         "truckMarkerSize": "Truck Marker Größe",
         "units": "Einheiten",

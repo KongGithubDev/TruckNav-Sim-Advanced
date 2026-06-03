@@ -108,6 +108,7 @@
         "traffic": "Traffic Layer (TruckersMP)",
         "weatherOverlay": "Weather Overlay (rain/snow/fog)",
         "voice": "Voice",
+        "plugin": "Plugin",
         "trafficServer": "Traffic Server",
         "truckMarkerSize": "Truck Marker Size",
         "units": "Units",

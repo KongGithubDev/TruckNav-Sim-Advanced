@@ -108,6 +108,7 @@
         "traffic": "ชั้นจราจร (TruckersMP)",
         "weatherOverlay": "สภาพอากาศ (ฝน/หิมะ/หมอก)",
         "voice": "เสียง",
+        "plugin": "ปลั๊กอิน",
         "trafficServer": "เซิร์ฟเวอร์จราจร",
         "truckMarkerSize": "ขนาดไอคอนรถบรรทุก",
         "units": "หน่วยวัด",
