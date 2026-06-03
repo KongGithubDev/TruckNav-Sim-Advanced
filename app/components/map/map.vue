@@ -8,7 +8,9 @@ import { generateTruckIcon } from "~/assets/utils/map/markers";
 import type { CityData } from "~/composables/useCitySearch";
 import { convertEts2ToGeo, convertAtsToGeo } from "~/assets/utils/map/converters";
 import { buildVoiceDirection, buildCombinedVoiceDirection } from "~/assets/utils/routing/directions";
+import { KeepAwake } from "@capacitor-community/keep-awake";
 import { cleanupMapLibre } from "~/composables/MapLibre";
+import { useWeatherOverlay } from "~/composables/useWeatherOverlay";
 
 defineProps<{ goHome: () => void }>();
 
@@ -133,7 +135,11 @@ const {
 
 //
 // Settings Controller
-const { activeSettings, settings } = useSettings();
+const { activeSettings, settings, updateProfile } = useSettings();
+
+//
+// Weather Overlay
+const { setupWeatherOverlay, teardownWeatherOverlay, updateWeather } = useWeatherOverlay(map);
 const { t } = useTranslations();
 const { speakWarning } = useVoiceWarnings();
 
@@ -543,6 +549,11 @@ watch([loading, gameConnected], ([isLoading, isGameConnected]) => {
     }
 });
 
+// Watch weather overlay: update when wipers or gameTime changes
+watch([wipers, gameTime, () => activeSettings.value.weatherOverlay], ([wip, gt]) => {
+    updateWeather(wip, gt);
+});
+
 watch(gameConnected, (isConnected) => {
     if (!map.value) return;
     if (!isConnected) {
@@ -570,6 +581,71 @@ watch(
         startPolling(map.value, game, routePath || undefined);
     },
 );
+
+// Watch POI icons visibility
+watch(() => activeSettings.value.showPoiIcons, (visible) => {
+    if (!map.value) return;
+    const layers = ["all-sprites", "road-sprites"];
+    layers.forEach((layerId) => {
+        if (map.value!.getLayer(layerId)) {
+            map.value!.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
+        }
+    });
+}, { immediate: false });
+
+// Watch city/village/country labels visibility
+watch(() => activeSettings.value.showCityLabels, (visible) => {
+    if (!map.value) return;
+    const layers = ["village-labels", "city-labels", "capital-major-labels", "country-labels"];
+    layers.forEach((layerId) => {
+        if (map.value!.getLayer(layerId)) {
+            map.value!.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
+        }
+    });
+}, { immediate: false });
+
+// Sync 3D mode setting with MapCamera
+watch(() => activeSettings.value.enable3DMode, (newVal) => {
+    if (map.value && newVal !== is3DMode.value) {
+        toggle3DMode();
+    }
+});
+
+// Sync auto-follow setting with MapCamera
+watch(() => activeSettings.value.autoFollowEnabled, (newVal) => {
+    if (map.value && newVal !== isAutoFollowEnabled.value) {
+        toggleAutoFollow();
+    }
+});
+
+// Sync MapCamera state back to settings when HUD buttons are used
+watch(is3DMode, (newVal) => {
+    if (newVal !== activeSettings.value.enable3DMode) {
+        updateProfile("enable3DMode", newVal);
+    }
+});
+
+watch(isAutoFollowEnabled, (newVal) => {
+    if (newVal !== activeSettings.value.autoFollowEnabled) {
+        updateProfile("autoFollowEnabled", newVal);
+    }
+});
+
+// Watch keep screen on setting
+watch(() => activeSettings.value.keepScreenOn, async (enabled) => {
+    try {
+        const result = await KeepAwake.isSupported();
+        if (result.isSupported) {
+            if (enabled) {
+                await KeepAwake.keepAwake();
+            } else {
+                await KeepAwake.allowSleep();
+            }
+        }
+    } catch (e) {
+        console.error("KeepAwake error:", e);
+    }
+}, { immediate: true });
 
 watch(
     () => routeTrafficInfo.value?.routeColors,
@@ -623,12 +699,31 @@ onMounted(async () => {
             );
 
             setupRouteLayer();
+            setupWeatherOverlay();
             initCameraListeners();
 
             // Setup traffic layers
             // map is guaranteed non-null inside the load callback
             const m = map.value!;
             setupTrafficLayers(m);
+
+            // Apply initial POI and label visibility
+            if (!activeSettings.value.showPoiIcons) {
+                const poiLayers = ["all-sprites", "road-sprites"];
+                poiLayers.forEach((layerId) => {
+                    if (m.getLayer(layerId)) {
+                        m.setLayoutProperty(layerId, "visibility", "none");
+                    }
+                });
+            }
+            if (!activeSettings.value.showCityLabels) {
+                const labelLayers = ["village-labels", "city-labels", "capital-major-labels", "country-labels"];
+                labelLayers.forEach((layerId) => {
+                    if (m.getLayer(layerId)) {
+                        m.setLayoutProperty(layerId, "visibility", "none");
+                    }
+                });
+            }
 
             // Start traffic polling if enabled
             if (activeSettings.value.showTraffic) {
@@ -679,6 +774,7 @@ onUnmounted(() => {
     stopTelemetry();
     destroyWorker();
     stopPolling();
+    teardownWeatherOverlay();
     cleanupMapLibre();
 
     if (routeTimer) clearTimeout(routeTimer);

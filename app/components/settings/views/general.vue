@@ -36,6 +36,10 @@ function toggleUnits() {
 function toggleDlcPanel() {
     isDlcPanelOpened.value = !isDlcPanelOpened.value;
 }
+
+function toggleKeepScreenOn() {
+    updateProfile("keepScreenOn", !activeSettings.value.keepScreenOn);
+}
 </script>
 
 <template>
@@ -69,6 +73,24 @@ function toggleDlcPanel() {
                 @connect="toggleUnits"
                 size="normal"
                 :active="isMetric"
+            />
+        </div>
+
+        <div class="small-separator"></div>
+
+        <div class="option setting">
+            <div class="option-title">
+                <Icon name="lucide:sun" size="24" />
+                <p>{{ t("settings.keepScreenOn") || "Keep Screen On" }}</p>
+            </div>
+
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="toggleKeepScreenOn"
+                :active="!activeSettings.keepScreenOn"
+                size="normal"
             />
         </div>
 

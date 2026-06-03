@@ -36,38 +36,6 @@ const items = ref([
     "Commissioner",
 ]);
 
-interface TMPServer {
-    id: number;
-    map: number;
-    name: string;
-    game: string;
-}
-
-const serverOptions = ref<{ label: string; value: number }[]>([]);
-
-onMounted(async () => {
-    try {
-        const res = await fetch("https://truckersmp.krashnz.com/servers");
-        if (res.ok) {
-            const data = await res.json();
-            if (data && data.servers) {
-                // Filter servers based on the current game (ets2 includes promods)
-                const game = settings.value.selectedGame;
-                const filtered = data.servers.filter((s: TMPServer) => 
-                    game === 'ets2' ? (s.game === 'ets2' || s.game === 'promods') : s.game === 'ats'
-                );
-                
-                serverOptions.value = filtered.map((s: TMPServer) => ({
-                    label: s.name,
-                    value: s.map // The 'map' property is what ets2map tracker uses as server id
-                }));
-            }
-        }
-    } catch (e) {
-        console.error("Failed to load TMP servers", e);
-    }
-});
-
 async function updatePreviewIcon() {
     const img = await generateTruckIcon(activeSettings.value.themeColor);
     truckImgSrc.value = img.src;
@@ -75,14 +43,6 @@ async function updatePreviewIcon() {
 
 function toggleTextColor() {
     updateProfile("textColor", isTextThemeLight.value ? "dark" : "light");
-}
-
-function toggleTraffic() {
-    updateProfile("showTraffic", !activeSettings.value.showTraffic);
-}
-
-function updateTrafficServer(val: number) {
-    updateProfile("trafficServerId", val);
 }
 
 function updateFont(val: string) {
@@ -100,7 +60,6 @@ function toggleAutoDayNight() {
 function toggleVoiceWarnings() {
     updateProfile("voiceWarnings", !activeSettings.value.voiceWarnings);
     if (!activeSettings.value.voiceWarnings) {
-        // Just turned ON, try to load voices
         loadVoices();
     }
 }
@@ -143,49 +102,6 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                 <Icon name="lucide:route" size="24" />
             </template>
         </ColorOption>
-
-        <div class="small-separator"></div>
-
-        <div class="option setting">
-            <div class="option-title">
-                <Icon name="lucide:traffic-cone" size="24" />
-                <p>{{ t("settings.traffic") }}</p>
-            </div>
-
-            <SegmentedControl
-                :left-option="t('common.off')"
-                :right-option="t('common.on')"
-                :is-same-color="true"
-                @connect="toggleTraffic"
-                :active="!activeSettings.showTraffic"
-                size="normal"
-            />
-        </div>
-
-        <Transition name="fade-collapse">
-            <div v-if="activeSettings.showTraffic" class="option setting" style="margin-top: 10px;">
-                <div class="option-title" style="margin-left: 30px;">
-                    <Icon name="lucide:server" size="24" />
-                    <p>{{ t("settings.trafficServer") || "Server" }}</p>
-                </div>
-
-                <USelect
-                    :model-value="activeSettings.trafficServerId"
-                    @update:model-value="(val: number) => updateTrafficServer(Number(val))"
-                    :items="serverOptions"
-                    variant="none"
-                    class="selector"
-                    value-attribute="value"
-                    option-attribute="label"
-                    :ui="{
-                        trailingIcon: 'shrink-0 size-[20px] text-white !px-6',
-                        content: 'bg-[#222e3c] shadow-xl rounded-md',
-                        item: 'flex items-center justify-between text-[1.6rem] font-BOLD !py-2 !px-3 text-[#f2f2f2] data-[highlighted]:bg-[#3d546e] rounded cursor-pointer transition-colors',
-                        itemTrailingIcon: 'text-white',
-                    }"
-                />
-            </div>
-        </Transition>
 
         <div class="small-separator"></div>
 
@@ -512,36 +428,6 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
             </div>
         </Transition>
 
-        <!-- Turn Zoom Distance (always visible, not voice-dependent) -->
-        <div style="margin-top: 14px; padding-top: 12px; margin-left: 30px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                <Icon name="lucide:search" size="16" style="color: #a1a1aa;" />
-                <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600;">
-                    {{ t("settings.turnZoom") || "Auto-Zoom Distance" }}
-                </span>
-            </div>
-
-            <div class="voice-distance-slider">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 1.3rem; color: #d4d4d8;">🔍 {{ t("settings.turnZoomDesc") || "Zoom when turn <" }}</span>
-                    <span style="font-size: 1.3rem; color: #22d3ee; font-weight: 600;">{{ (activeSettings.turnZoomKm ?? 0.8) * 1000 }} m</span>
-                </div>
-                <input
-                    type="range"
-                    min="0.05"
-                    max="3"
-                    step="0.05"
-                    :value="activeSettings.turnZoomKm ?? 0.8"
-                    @input="(e: any) => updateProfile('turnZoomKm', parseFloat(e.target.value))"
-                    style="width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.12); border-radius: 3px; outline: none; cursor: pointer;"
-                />
-                <div style="display: flex; justify-content: space-between; font-size: 1rem; color: #666; margin-top: 2px;">
-                    <span>50 m</span>
-                    <span>3 km</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Test voice button -->
         <button
             class="test-voice-btn"
@@ -576,6 +462,8 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
             <Icon name="lucide:info" size="14" style="vertical-align: middle; margin-right: 4px;" />
             {{ t("settings.voiceNote") }}
         </p>
+
+        <div class="small-separator"></div>
 
         <div class="option setting">
             <div class="option-title">

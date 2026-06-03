@@ -25,6 +25,12 @@ export interface GameProfile {
     trafficServerId: number;
     autoDayNightTheme: boolean;
     voiceWarnings: boolean;
+    weatherOverlay: boolean;
+    keepScreenOn: boolean;
+    enable3DMode: boolean;
+    autoFollowEnabled: boolean;
+    showPoiIcons: boolean;
+    showCityLabels: boolean;
     voiceLanguage: string;
     voiceWarningCategories: {
         speeding: boolean;
@@ -73,6 +79,12 @@ const DEFAULT_PROFILE: GameProfile = {
     trafficServerId: 2,
     autoDayNightTheme: true,
     voiceWarnings: true,
+    weatherOverlay: true,
+    keepScreenOn: true,
+    enable3DMode: false,
+    autoFollowEnabled: true,
+    showPoiIcons: true,
+    showCityLabels: true,
     voiceLanguage: "", // Will use system default if empty
     voiceWarningCategories: {
         speeding: true,
