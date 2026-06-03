@@ -657,16 +657,52 @@ export const useRouteController = (
 
     function redrawRouteWithTraffic(colors: string[] | null) {
         if (!map.value || !currentRoutePath.value) return;
-        const coords = toRaw(currentRoutePath.value);
+        const fullPath = toRaw(currentRoutePath.value);
         const rawMap = toRaw(map.value);
-        
-        if (!colors || colors.length !== coords.length - 1) {
-            setMapLibreData(rawMap, "route-line", "LineString", coords);
+
+        // When actively navigating, respect the progress split — only draw unpassed portion
+        // Otherwise traffic color watch would overwrite the passed/unpassed split
+        if (isRouteActive.value && currentRouteIndex.value > 0) {
+            const displayIndex = Math.min(currentRouteIndex.value, fullPath.length - 1);
+            const unpassedPath = fullPath.slice(displayIndex);
+            if (unpassedPath.length <= 1) {
+                // Nothing left to show — clear the route-line
+                const source = rawMap.getSource("route-line") as GeoJSONSource;
+                if (source) source.setData({ type: "FeatureCollection", features: [] });
+                return;
+            }
+            if (!colors || colors.length !== fullPath.length - 1) {
+                setMapLibreData(rawMap, "route-line", "LineString", unpassedPath, { color: activeSettings.value.routeColor });
+                return;
+            }
+            // Draw unpassed path with per-segment traffic colors
+            const unpassedColors = colors.slice(displayIndex);
+            const features = [];
+            for (let i = 0; i < unpassedPath.length - 1; i++) {
+                const props: any = {};
+                if (unpassedColors[i]) props.color = unpassedColors[i];
+                features.push({
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: [unpassedPath[i], unpassedPath[i + 1]]
+                    },
+                    properties: props
+                });
+            }
+            const source = rawMap.getSource("route-line") as GeoJSONSource;
+            if (source) source.setData({ type: "FeatureCollection", features: features as any });
+            return;
+        }
+
+        // Not navigating — draw the full route (e.g. during route selection mode)
+        if (!colors || colors.length !== fullPath.length - 1) {
+            setMapLibreData(rawMap, "route-line", "LineString", fullPath);
             return;
         }
 
         const features = [];
-        for (let i = 0; i < coords.length - 1; i++) {
+        for (let i = 0; i < fullPath.length - 1; i++) {
             const props: any = {};
             if (colors[i]) props.color = colors[i];
             
@@ -674,7 +710,7 @@ export const useRouteController = (
                 type: "Feature",
                 geometry: {
                     type: "LineString",
-                    coordinates: [coords[i], coords[i + 1]]
+                    coordinates: [fullPath[i], fullPath[i + 1]]
                 },
                 properties: props
             });
@@ -1621,6 +1657,10 @@ export const useRouteController = (
                     } else {
                         setMapLibreData(map.value, "route-line", "LineString", remainingPath, { color: activeSettings.value.routeColor });
                     }
+                } else {
+                    // No remaining segments — clear route-line to prevent stale blue line showing over grey passed area
+                    const source = map.value.getSource("route-line") as GeoJSONSource;
+                    if (source) source.setData({ type: "FeatureCollection", features: [] });
                 }
             }
         }
@@ -1670,6 +1710,7 @@ export const useRouteController = (
         if (!map.value) return;
 
         deleteMapLibreData(map.value, "route-line");
+        deleteMapLibreData(map.value, "route-passed-line");
         deleteMapLibreData(map.value, "alt-route-line");
         deleteMapLibreData(map.value, "destination-source");
         deleteMapLibreData(map.value, "route-progress-marker");

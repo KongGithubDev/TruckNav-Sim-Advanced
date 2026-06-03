@@ -28,12 +28,20 @@ export interface GameProfile {
     voiceLanguage: string;
     voiceWarningCategories: {
         speeding: boolean;
+        turn_5km: boolean;
         turn_2km: boolean;
         turn_1km: boolean;
         turn_500m: boolean;
         turn_now: boolean;
         traffic_ahead: boolean;
         straight_long: boolean;
+    };
+    voiceWarningDistances: {
+        turn5kmStart: number;   // km — announce when distance < this value (until next tier)
+        turn2kmStart: number;
+        turn500mStart: number;
+        turnNowStart: number;   // km — announce when distance < this value
+        straightLongStart: number; // km — announce long straight when > this
     };
 }
 
@@ -67,12 +75,20 @@ const DEFAULT_PROFILE: GameProfile = {
     voiceLanguage: "", // Will use system default if empty
     voiceWarningCategories: {
         speeding: true,
+        turn_5km: true,
         turn_2km: true,
         turn_1km: true,
         turn_500m: true,
         turn_now: true,
         traffic_ahead: true,
         straight_long: true,
+    },
+    voiceWarningDistances: {
+        turn5kmStart: 6,       // 3–6 km range (lower bound = turn2kmStart)
+        turn2kmStart: 1.5,     // 0.3–1.5 km range
+        turn500mStart: 0.3,    // 0.08–0.3 km range
+        turnNowStart: 0.08,    // < 0.08 km
+        straightLongStart: 10, // > 10 km
     },
 };
 

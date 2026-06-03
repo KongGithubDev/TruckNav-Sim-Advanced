@@ -137,9 +137,13 @@ const { activeSettings, settings } = useSettings();
 const { t } = useTranslations();
 const { speakWarning } = useVoiceWarnings();
 
-// Multi-tier voice direction state (reduced to 3 tiers to prevent overlap at high speed)
-// tier_2km now covers the full 0.3-1.5km approach range (merged old 2km + 1km)
+// Multi-tier voice direction state — 4 tiers for early-to-late approach warnings
+// tier_5km: early notice for long-distance preparation
+// tier_2km: mid-range approach (0.3-1.5km)
+// tier_500m: short-range approach
+// tier_now: immediate turn
 let spokenTiers = {
+    tier_5km: false,
     tier_2km: false,
     tier_500m: false,
     tier_now: false,
@@ -170,6 +174,7 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
     if (nextStep.id !== currentVoiceStepId) {
         currentVoiceStepId = nextStep.id;
         spokenTiers = {
+            tier_5km: false,
             tier_2km: false,
             tier_500m: false,
             tier_now: false,
@@ -186,9 +191,18 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
         : Infinity;
     const hasNearbyTurn = secondStep && gapKm < 0.5 && secondStep.type !== "destination";
 
-    // Long straight announcement — speak once when entering a stretch > 10km
+    // Use configurable distances from settings
+    const d = activeSettings.value.voiceWarningDistances || {
+        turn5kmStart: 6,
+        turn2kmStart: 1.5,
+        turn500mStart: 0.3,
+        turnNowStart: 0.08,
+        straightLongStart: 10,
+    };
+
+    // Long straight announcement — speak once when entering a stretch > threshold
     // Mirrors the ManeuverCard UI: exit prefix > destination > plain
-    if (dist > 10 && !spokenStraight) {
+    if (dist > d.straightLongStart && !spokenStraight) {
         const roundedKm = dist >= 50 ? Math.round(dist / 10) * 10 : Math.round(dist / 5) * 5;
         const dest = destinationName.value;
         let straightMsg: string;
@@ -250,22 +264,35 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
         spokenStraight = true;
     }
 
-    // Multi-tier turn announcements (3 tiers to prevent overlap at high speed)
+    // Multi-tier turn announcements (4 tiers to prevent overlap at high speed)
     // Each tier has both lower and upper bounds to prevent cascade firing
-    // tier_2km now covers the full 0.3-1.5km approach range (merged old 2km + 1km)
-    if (dist >= 0.3 && dist < 1.5 && !spokenTiers.tier_2km) {
+    // Distances are user-configurable via settings
+    
+    // tier_5km: early notice — speak once when distance is between turn2kmStart and turn5kmStart
+    if (dist >= d.turn2kmStart && dist < d.turn5kmStart && !spokenTiers.tier_5km) {
+        const msg = hasNearbyTurn
+            ? buildCombinedVoiceDirection(nextStep, secondStep!, dist, locale)
+            : buildVoiceDirection(nextStep, dist, locale);
+        speakWarning('turn_5km', msg, 30);
+        spokenTiers.tier_5km = true;
+    }
+
+    // tier_2km: mid-range approach — between turn500mStart and turn2kmStart
+    if (dist >= d.turn500mStart && dist < d.turn2kmStart && !spokenTiers.tier_2km) {
         const msg = hasNearbyTurn
             ? buildCombinedVoiceDirection(nextStep, secondStep!, dist, locale)
             : buildVoiceDirection(nextStep, dist, locale);
         speakWarning('turn_2km', msg, 20);
         spokenTiers.tier_2km = true;
     }
-    if (dist >= 0.08 && dist < 0.3 && !spokenTiers.tier_500m) {
+    // tier_500m: short-range — between turnNowStart and turn500mStart
+    if (dist >= d.turnNowStart && dist < d.turn500mStart && !spokenTiers.tier_500m) {
         const msg = buildVoiceDirection(nextStep, dist, locale);
         speakWarning('turn_500m', msg, 20);
         spokenTiers.tier_500m = true;
     }
-    if (dist > 0 && dist < 0.08 && !spokenTiers.tier_now) {
+    // tier_now: immediate turn — below turnNowStart
+    if (dist > 0 && dist < d.turnNowStart && !spokenTiers.tier_now) {
         const msg = buildVoiceDirection(nextStep, dist, locale);
         speakWarning('turn_now', msg, 5);
         spokenTiers.tier_now = true;

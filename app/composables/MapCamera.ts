@@ -188,7 +188,7 @@ export const useMapCamera = (map: Ref<Map | null>) => {
     };
 
     const setTurnCamera = (approaching: boolean) => {
-        if (!map.value || !isCameraLocked.value || !is3DMode.value) return;
+        if (!map.value || !isCameraLocked.value) return;
         
         if (approaching && !isTurnCameraActive) {
             isTurnCameraActive = true;
@@ -196,23 +196,37 @@ export const useMapCamera = (map: Ref<Map | null>) => {
             isEasing = true;
             if (easeTimeout) clearTimeout(easeTimeout);
             easeTimeout = setTimeout(() => { isEasing = false; }, 1000);
-            
-            map.value.easeTo({
-                pitch: 45,
-                zoom: Math.max(baseZoom, 12),
-                duration: 1000
-            });
+
+            if (is3DMode.value) {
+                map.value.easeTo({
+                    pitch: 45,
+                    zoom: Math.max(baseZoom, 12),
+                    duration: 1000
+                });
+            } else {
+                map.value.easeTo({
+                    zoom: Math.max(baseZoom, 12),
+                    duration: 1000
+                });
+            }
         } else if (!approaching && isTurnCameraActive) {
             isTurnCameraActive = false;
             isEasing = true;
             if (easeTimeout) clearTimeout(easeTimeout);
             easeTimeout = setTimeout(() => { isEasing = false; }, 1000);
-            
-            map.value.easeTo({
-                pitch: 60,
-                zoom: baseZoom,
-                duration: 1000
-            });
+
+            if (is3DMode.value) {
+                map.value.easeTo({
+                    pitch: 60,
+                    zoom: baseZoom,
+                    duration: 1000
+                });
+            } else {
+                map.value.easeTo({
+                    zoom: baseZoom,
+                    duration: 1000
+                });
+            }
         }
     };
 
