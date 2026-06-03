@@ -28,7 +28,10 @@ export interface GameProfile {
     keepScreenOn: boolean;
     enable3DMode: boolean;
     autoFollowEnabled: boolean;
-    showPoiIcons: boolean;
+    showPoiGas: boolean;
+    showPoiService: boolean;
+    showPoiDealers: boolean;
+    showPoiOther: boolean;
     showCityLabels: boolean;
     voiceLanguage: string;
     voiceWarningCategories: {
@@ -81,7 +84,10 @@ const DEFAULT_PROFILE: GameProfile = {
     keepScreenOn: true,
     enable3DMode: false,
     autoFollowEnabled: true,
-    showPoiIcons: true,
+    showPoiGas: true,
+    showPoiService: true,
+    showPoiDealers: true,
+    showPoiOther: true,
     showCityLabels: true,
     voiceLanguage: "", // Will use system default if empty
     voiceWarningCategories: {

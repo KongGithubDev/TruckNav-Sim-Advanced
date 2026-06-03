@@ -59,8 +59,8 @@ function updateTrafficServer(val: number) {
     updateProfile("trafficServerId", val);
 }
 
-function togglePoiIcons() {
-    updateProfile("showPoiIcons", !activeSettings.value.showPoiIcons);
+function togglePoiCategory(key: "showPoiGas" | "showPoiService" | "showPoiDealers" | "showPoiOther") {
+    updateProfile(key, !activeSettings.value[key]);
 }
 
 function toggleCityLabels() {
@@ -227,16 +227,67 @@ function toggleCityLabels() {
         <div class="option setting">
             <div class="option-title">
                 <Icon name="lucide:map-pin" size="24" />
-                <p>{{ t("settings.showPoiIcons") || "POI Icons (Gas/Service/Dealers)" }}</p>
+                <p>{{ t("settings.showPoiIcons") || "POI Icons" }}</p>
             </div>
+        </div>
 
+        <div class="option setting" style="margin-top: 4px;">
+            <div class="option-title" style="margin-left: 30px;">
+                <Icon name="lucide:fuel" size="20" />
+                <p style="font-size: 1.3rem;">{{ t("settings.showPoiGas") || "Gas Stations" }}</p>
+            </div>
             <SegmentedControl
                 :left-option="t('common.off')"
                 :right-option="t('common.on')"
                 :is-same-color="true"
-                @connect="togglePoiIcons"
-                :active="!activeSettings.showPoiIcons"
-                size="normal"
+                @connect="() => togglePoiCategory('showPoiGas')"
+                :active="!activeSettings.showPoiGas"
+                size="small"
+            />
+        </div>
+
+        <div class="option setting">
+            <div class="option-title" style="margin-left: 30px;">
+                <Icon name="lucide:wrench" size="20" />
+                <p style="font-size: 1.3rem;">{{ t("settings.showPoiService") || "Service / Repair" }}</p>
+            </div>
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="() => togglePoiCategory('showPoiService')"
+                :active="!activeSettings.showPoiService"
+                size="small"
+            />
+        </div>
+
+        <div class="option setting">
+            <div class="option-title" style="margin-left: 30px;">
+                <Icon name="lucide:warehouse" size="20" />
+                <p style="font-size: 1.3rem;">{{ t("settings.showPoiDealers") || "Truck Dealers" }}</p>
+            </div>
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="() => togglePoiCategory('showPoiDealers')"
+                :active="!activeSettings.showPoiDealers"
+                size="small"
+            />
+        </div>
+
+        <div class="option setting">
+            <div class="option-title" style="margin-left: 30px;">
+                <Icon name="lucide:layers" size="20" />
+                <p style="font-size: 1.3rem;">{{ t("settings.showPoiOther") || "Other (Parking, Garages, ...)" }}</p>
+            </div>
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="() => togglePoiCategory('showPoiOther')"
+                :active="!activeSettings.showPoiOther"
+                size="small"
             />
         </div>
 

@@ -331,46 +331,58 @@ export async function initializeMap(
             "lines",
         );
 
-        // ALL SPRITE SHEETS
-        map.addLayer({
-            id: "all-sprites",
-            type: "symbol",
-            source: "all-data",
-            "source-layer": "spritelocations",
-            filter: ["!=", ["get", "poiType"], "road"],
-            minzoom: 8,
-            layout: {
-                "icon-image": ["get", "sprite"],
-                "icon-size": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    7,
-                    0.7,
-                    10,
-                    1.5,
-                ],
-                "icon-allow-overlap": false,
-                "symbol-sort-key": [
-                    "match",
-                    ["get", "sprite"],
-                    "gas_ico",
-                    1,
-                    "service_ico",
-                    2,
-                    10,
-                ],
-                "symbol-placement": "point",
-            },
-        });
+        // ALL SPRITE SHEETS — split by category for per-type toggles
+        function addPoiLayer(id: string, filter: any) {
+            map.addLayer({
+                id,
+                type: "symbol",
+                source: "all-data",
+                "source-layer": "spritelocations",
+                filter,
+                minzoom: 8,
+                layout: {
+                    "icon-image": ["get", "sprite"],
+                    "icon-size": ["interpolate", ["linear"], ["zoom"], 7, 0.7, 10, 1.5],
+                    "icon-allow-overlap": false,
+                    "symbol-placement": "point",
+                },
+            });
+        }
 
-        // ROAD POI TYPE
+        // POI Gas Stations
+        addPoiLayer("poi-gas-stations", ["all", ["!=", "poiType", "road"], ["==", "sprite", "gas_ico"]]);
+
+        // POI Service (wrench icon)
+        addPoiLayer("poi-service", ["all", ["!=", "poiType", "road"], ["==", "sprite", "service_ico"]]);
+
+        // POI Dealers
+        addPoiLayer("poi-dealers", [
+            "all",
+            ["!=", "poiType", "road"],
+            ["in", "sprite", "dealer_ico", "scania_dlr", "volvo_dlr", "daf_dlr",
+             "kw_trk_dlr", "ws_trk_dlr", "ath_trk_dlr", "pt_trk_dlr",
+             "dc_car_dlr", "lum_car_dlr", "dmc_car_dlr", "pio_car_dlr",
+             "ali_car_dlr", "wan_car_dlr", "ffe_frm_dlr"],
+        ]);
+
+        // POI Other (parking, garage, toll, weigh, etc.)
+        addPoiLayer("poi-other", [
+            "all",
+            ["!=", "poiType", "road"],
+            ["!in", "sprite", "gas_ico", "service_ico",
+             "dealer_ico", "scania_dlr", "volvo_dlr", "daf_dlr",
+             "kw_trk_dlr", "ws_trk_dlr", "ath_trk_dlr", "pt_trk_dlr",
+             "dc_car_dlr", "lum_car_dlr", "dmc_car_dlr", "pio_car_dlr",
+             "ali_car_dlr", "wan_car_dlr", "ffe_frm_dlr"],
+        ]);
+
+        // ROAD POI TYPE (e.g. speed limits, curves, etc.)
         map.addLayer({
             id: "road-sprites",
             type: "symbol",
             source: "all-data",
             "source-layer": "spritelocations",
-            filter: ["==", ["get", "poiType"], "road"],
+            filter: ["==", "poiType", "road"],
             minzoom: 8,
             layout: {
                 "icon-image": ["get", "sprite"],
@@ -394,7 +406,7 @@ export async function initializeMap(
             type: "symbol",
             source: "all-data",
             "source-layer": "cities",
-            filter: ["!=", ["get", "capital"], 2],
+            filter: ["!=", "capital", 2],
             layout: {
                 "text-field": ["get", "name"],
                 "text-font": [activeSettings.value.fontFamily],
@@ -418,7 +430,7 @@ export async function initializeMap(
         map.addLayer({
             id: "capital-major-labels",
             type: "symbol",
-            filter: ["==", ["get", "capital"], 2],
+            filter: ["==", "capital", 2],
             source: "all-data",
             "source-layer": "cities",
             layout: {

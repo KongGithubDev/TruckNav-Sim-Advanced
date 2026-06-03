@@ -574,16 +574,22 @@ watch(
     },
 );
 
-// Watch POI icons visibility
-watch(() => activeSettings.value.showPoiIcons, (visible) => {
-    if (!map.value) return;
-    const layers = ["all-sprites", "road-sprites"];
-    layers.forEach((layerId) => {
-        if (map.value!.getLayer(layerId)) {
-            map.value!.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
+// Watch POI icons visibility — per category
+const poiCategoryLayers = [
+    { key: "showPoiGas" as const, layer: "poi-gas-stations" },
+    { key: "showPoiService" as const, layer: "poi-service" },
+    { key: "showPoiDealers" as const, layer: "poi-dealers" },
+    { key: "showPoiOther" as const, layer: "poi-other" },
+];
+
+poiCategoryLayers.forEach(({ key, layer }) => {
+    watch(() => (activeSettings.value as any)[key], (visible) => {
+        if (!map.value) return;
+        if (map.value.getLayer(layer)) {
+            map.value.setLayoutProperty(layer, "visibility", visible ? "visible" : "none");
         }
-    });
-}, { immediate: false });
+    }, { immediate: false });
+});
 
 // Watch city/village/country labels visibility
 watch(() => activeSettings.value.showCityLabels, (visible) => {
@@ -699,14 +705,17 @@ onMounted(async () => {
             setupTrafficLayers(m);
 
             // Apply initial POI and label visibility
-            if (!activeSettings.value.showPoiIcons) {
-                const poiLayers = ["all-sprites", "road-sprites"];
-                poiLayers.forEach((layerId) => {
-                    if (m.getLayer(layerId)) {
-                        m.setLayoutProperty(layerId, "visibility", "none");
-                    }
-                });
-            }
+            const poiInitLayers = [
+                { key: "showPoiGas", layer: "poi-gas-stations" },
+                { key: "showPoiService", layer: "poi-service" },
+                { key: "showPoiDealers", layer: "poi-dealers" },
+                { key: "showPoiOther", layer: "poi-other" },
+            ];
+            poiInitLayers.forEach(({ key, layer }) => {
+                if (!(activeSettings.value as any)[key] && m.getLayer(layer)) {
+                    m.setLayoutProperty(layer, "visibility", "none");
+                }
+            });
             if (!activeSettings.value.showCityLabels) {
                 const labelLayers = ["village-labels", "city-labels", "capital-major-labels", "country-labels"];
                 labelLayers.forEach((layerId) => {
