@@ -248,7 +248,7 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
         </div>
 
         <Transition name="fade-collapse">
-            <div v-if="activeSettings.voiceWarnings" class="voice-options" style="margin-top: 10px; margin-left: 30px;">
+            <div v-if="activeSettings.voiceWarnings" class="voice-options" style="margin-top: 10px; margin-left: 30px; padding-right: 30px;">
                 <!-- Language selector -->
                 <div class="option setting" style="margin-bottom: 12px;">
                     <div class="option-title">
@@ -506,7 +506,9 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                         <div style="display: flex; justify-content: space-between; font-size: 1rem; color: #666; margin-top: 2px;">
                             <span>2 km</span>
                             <span>50 km</span>
-                        </div>                </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </Transition>
 
