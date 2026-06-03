@@ -130,6 +130,10 @@
         "voiceDistances": "Voice Distances",
         "voiceTraffic": "Traffic Alert",
         "testVoice": "Test Voice",
+        "routeType": "Route Type",
+        "routeTypeFastest": "Fastest",
+        "routeTypeShortest": "Shortest",
+        "avoidFerries": "Avoid Ferries",
         "turnZoom": "Auto-Zoom Distance",
         "turnZoomDesc": "Zoom when turn <"
     },

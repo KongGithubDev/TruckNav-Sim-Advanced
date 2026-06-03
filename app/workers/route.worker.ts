@@ -86,6 +86,10 @@ self.onmessage = async (e: MessageEvent) => {
                 startType,
                 ownedDlcs,
                 targetCoords,
+                undefined,
+                undefined,
+                payload.routeType,
+                payload.avoidFerries,
             );
 
             let alternativeResult: Awaited<ReturnType<typeof calculateRoute>> | null = null;
@@ -112,6 +116,8 @@ self.onmessage = async (e: MessageEvent) => {
                 targetCoords,
                 mainRouteEdgeIds,
                 trafficPoints,
+                payload.routeType,
+                payload.avoidFerries,
             );
         }
 

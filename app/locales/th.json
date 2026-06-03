@@ -130,6 +130,10 @@
         "voiceDistances": "ตั้งระยะแจ้งเตือน",
         "voiceTraffic": "แจ้งเตือนจราจร",
         "testVoice": "ทดสอบเสียง",
+        "routeType": "ประเภทเส้นทาง",
+        "routeTypeFastest": "เร็วที่สุด",
+        "routeTypeShortest": "สั้นที่สุด",
+        "avoidFerries": "หลีกเลี่ยงเรือข้ามฟาก",
         "turnZoom": "ระยะซูมอัตโนมัติ",
         "turnZoomDesc": "ซูมเมื่อใกล้ถึง <"
     },

@@ -130,6 +130,10 @@
         "voiceDistances": "Sprachdistanzen",
         "voiceTraffic": "Verkehrswarnung",
         "testVoice": "Test Stimme",
+        "routeType": "Routentyp",
+        "routeTypeFastest": "Schnellste",
+        "routeTypeShortest": "Kürzeste",
+        "avoidFerries": "Fähren vermeiden",
         "turnZoom": "Auto-Zoom-Distanz",
         "turnZoomDesc": "Zoomen wenn Abbiegung <"
     },

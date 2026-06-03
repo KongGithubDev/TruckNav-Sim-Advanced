@@ -441,6 +441,8 @@ export const useRouteController = (
                     sdkScale,
                     avgSpeed,
                     trafficPoints: trafficPoints || undefined,
+                    routeType: activeSettings.value.routeType,
+                    avoidFerries: activeSettings.value.avoidFerries,
                 },
             });
         });
@@ -797,7 +799,7 @@ export const useRouteController = (
                 "line-opacity": 0.7,
                 "line-dasharray": [2, 2],
             },
-        }, "all-sprites");
+        }, "poi-gas-stations");
 
         map.value.addSource("route-line", {
             type: "geojson",
@@ -832,7 +834,7 @@ export const useRouteController = (
                     ],
                 },
             },
-            "all-sprites",
+            "poi-gas-stations",
         );
 
         map.value.addLayer(
@@ -858,7 +860,7 @@ export const useRouteController = (
                     ],
                 },
             },
-            "all-sprites",
+            "poi-gas-stations",
         );
 
         // Progress marker — a glowing dot that moves along the route path

@@ -173,6 +173,8 @@ export const calculateRoute = (
     targetLocation?: [number, number],
     excludedEdges?: Set<number>,
     trafficPoints?: [number, number][],
+    routeType?: "fastest" | "shortest",
+    avoidFerries?: boolean,
 ): {
     path: [number, number][];
     nodeSequence: number[];
@@ -288,11 +290,22 @@ export const calculateRoute = (
 
             let stepCost = edge.weight || 1;
 
-            if (excludedEdges?.has(neighborEdgeId)) {
-                stepCost += 5000;
-            }
+            // Shortest mode: only raw weight + basic penalties, skip heading/traffic costs
+            if (routeType === "shortest") {
+                if (excludedEdges?.has(neighborEdgeId)) stepCost += 5000;
+                if (avoidFerries && edge.isFerry) stepCost += 50000;
+            } else {
+                // Fastest mode: apply heading/traffic costs as normal
+                if (excludedEdges?.has(neighborEdgeId)) {
+                    stepCost += 5000;
+                }
 
-            if (!edge.isFerry && ferryGraceCounter === 0) {
+                // Ferries: if avoidFerries is enabled, add massive penalty
+                if (avoidFerries && edge.isFerry) {
+                    stepCost += 50000;
+                }
+
+                if (!edge.isFerry && ferryGraceCounter === 0) {
                 if (currentEdgeId === START_EDGE_ID && startHeading !== null) {
                     const nLng = flatCoords[neighborNodeId * 2]!;
                     const nLat = flatCoords[neighborNodeId * 2 + 1]!;
@@ -336,6 +349,7 @@ export const calculateRoute = (
                     stepCost += trafficCount * TRAFFIC_PENALTY_PER_POINT;
                 }
             }
+        } // end else (fastest mode)
 
             if (stepCost < 1) stepCost = 1;
             const tentativeG = currentG + stepCost;

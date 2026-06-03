@@ -66,6 +66,14 @@ function togglePoiCategory(key: "showPoiGas" | "showPoiService" | "showPoiDealer
 function toggleCityLabels() {
     updateProfile("showCityLabels", !activeSettings.value.showCityLabels);
 }
+
+function setRouteType(val: "fastest" | "shortest") {
+    updateProfile("routeType", val);
+}
+
+function toggleAvoidFerries() {
+    updateProfile("avoidFerries", !activeSettings.value.avoidFerries);
+}
 </script>
 
 <template>
@@ -157,6 +165,59 @@ function toggleCityLabels() {
                     <span>3 km</span>
                 </div>
             </div>
+        </div>
+
+        <div class="small-separator"></div>
+
+        <!-- Route Preferences Section -->
+        <div class="option setting" style="padding-top: 4px; padding-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <Icon name="lucide:route" size="18" style="color: #a1a1aa;" />
+                <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Route Preferences
+                </span>
+            </div>
+        </div>
+
+        <div class="option setting">
+            <div class="option-title">
+                <Icon name="lucide:gauge" size="24" />
+                <p>{{ t("settings.routeType") || "Route Type" }}</p>
+            </div>
+
+            <USelect
+                :model-value="activeSettings.routeType"
+                @update:model-value="(val: any) => setRouteType(val)"
+                :items="[
+                    { label: t('settings.routeTypeFastest') || 'Fastest', value: 'fastest' },
+                    { label: t('settings.routeTypeShortest') || 'Shortest', value: 'shortest' },
+                ]"
+                variant="none"
+                class="selector"
+                value-attribute="value"
+                option-attribute="label"
+                :ui="{
+                    trailingIcon: 'shrink-0 size-[20px] text-white !px-6',
+                    content: 'bg-[#222e3c] shadow-xl rounded-md',
+                    item: 'flex items-center justify-between text-[1.6rem] font-BOLD !py-2 !px-3 text-[#f2f2f2] data-[highlighted]:bg-[#3d546e] rounded cursor-pointer transition-colors',
+                    itemTrailingIcon: 'text-white',
+                }"
+            />
+        </div>
+
+        <div class="option setting">
+            <div class="option-title">
+                <Icon name="lucide:ship" size="24" />
+                <p>{{ t("settings.avoidFerries") || "Avoid Ferries" }}</p>
+            </div>
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="toggleAvoidFerries"
+                :active="!activeSettings.avoidFerries"
+                size="normal"
+            />
         </div>
 
         <div class="small-separator"></div>
