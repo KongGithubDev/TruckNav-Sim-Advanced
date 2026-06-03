@@ -71,11 +71,13 @@ function toggleCityLabels() {
 <template>
     <div>
         <!-- Navigation Mode Section -->
-        <div class="section-label" style="display: flex; align-items: center; gap: 8px; padding: 0 0 8px 0;">
-            <Icon name="lucide:navigation" size="18" style="color: #a1a1aa;" />
-            <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                {{ t("settings.navigation") }}
-            </span>
+        <div class="option setting" style="padding-top: 4px; padding-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <Icon name="lucide:navigation" size="18" style="color: #a1a1aa;" />
+                <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {{ t("settings.navigation") }}
+                </span>
+            </div>
         </div>
 
         <div class="option setting">
@@ -128,7 +130,7 @@ function toggleCityLabels() {
         <div class="small-separator"></div>
 
         <!-- Auto-Zoom Section -->
-        <div style="margin-top: 14px; padding-top: 12px;">
+        <div class="option setting" style="flex-direction: column; align-items: stretch; padding-top: 4px; padding-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                 <Icon name="lucide:search" size="16" style="color: #a1a1aa;" />
                 <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -160,11 +162,13 @@ function toggleCityLabels() {
         <div class="small-separator"></div>
 
         <!-- Traffic & Weather Section -->
-        <div class="section-label" style="display: flex; align-items: center; gap: 8px; padding: 0 0 8px 0;">
-            <Icon name="lucide:cloud-sun" size="18" style="color: #a1a1aa;" />
-            <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                Traffic & Weather
-            </span>
+        <div class="option setting" style="padding-top: 4px; padding-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <Icon name="lucide:cloud-sun" size="18" style="color: #a1a1aa;" />
+                <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Traffic & Weather
+                </span>
+            </div>
         </div>
 
         <div class="option setting">
@@ -227,11 +231,13 @@ function toggleCityLabels() {
         <div class="small-separator"></div>
 
         <!-- Map Display Section -->
-        <div class="section-label" style="display: flex; align-items: center; gap: 8px; padding: 0 0 8px 0;">
-            <Icon name="lucide:layout-dashboard" size="18" style="color: #a1a1aa;" />
-            <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                Map Display
-            </span>
+        <div class="option setting" style="padding-top: 4px; padding-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <Icon name="lucide:layout-dashboard" size="18" style="color: #a1a1aa;" />
+                <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    Map Display
+                </span>
+            </div>
         </div>
 
         <div class="option setting">

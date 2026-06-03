@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-type settingsView = "main" | "general" | "appearance" | "navigation";
+type settingsView = "main" | "general" | "appearance" | "navigation" | "voice";
 
 const { t } = useTranslations();
 
@@ -77,6 +77,16 @@ function handleBack() {
                             class="arrow"
                         />
                     </div>
+
+                    <div class="option setting" @click="setView('voice')">
+                        <Icon name="lucide:volume-2" size="28" />
+                        <span>{{ t("settings.voice") || "Voice" }}</span>
+                        <Icon
+                            name="lucide:chevron-right"
+                            size="24"
+                            class="arrow"
+                        />
+                    </div>
                 </div>
 
                 <General
@@ -95,6 +105,12 @@ function handleBack() {
                     v-else-if="currentView === 'navigation'"
                     class="menu-list"
                     key="navigation"
+                />
+
+                <Voice
+                    v-else-if="currentView === 'voice'"
+                    class="menu-list"
+                    key="voice"
                 />
             </Transition>
         </div>
