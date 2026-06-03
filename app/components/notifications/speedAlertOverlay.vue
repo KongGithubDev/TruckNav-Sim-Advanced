@@ -7,6 +7,7 @@ const props = defineProps<{
 const { kmToUserUnits, speedUnit } = useUnitConversion();
 const { t } = useTranslations();
 const { speakWarning } = useVoiceWarnings();
+const { activeSettings } = useSettings();
 
 const isSpeeding = ref(false);
 const displaySpeed = computed(() => Math.round(kmToUserUnits(props.truckSpeed)));
@@ -18,7 +19,7 @@ let lastSpeakTime = 0;
 
 watch(
     // Use 5% buffer (matching speedLimit.vue) to prevent flickering at the threshold
-    () => props.speedLimit > 0 && props.truckSpeed > props.speedLimit * 1.05,
+    () => props.speedLimit > 0 && props.truckSpeed > props.speedLimit * 1.05 && activeSettings.value.showSpeedAlert,
     (overLimit) => {
         if (overLimit) {
             if (!isSpeeding.value) {

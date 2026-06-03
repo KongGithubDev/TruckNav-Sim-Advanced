@@ -67,6 +67,10 @@ function toggleCityLabels() {
     updateProfile("showCityLabels", !activeSettings.value.showCityLabels);
 }
 
+function toggleSpeedAlert() {
+    updateProfile("showSpeedAlert", !activeSettings.value.showSpeedAlert);
+}
+
 function setRouteType(val: "fastest" | "shortest") {
     updateProfile("routeType", val);
 }
@@ -364,6 +368,22 @@ function toggleAvoidFerries() {
                 :is-same-color="true"
                 @connect="toggleCityLabels"
                 :active="!activeSettings.showCityLabels"
+                size="normal"
+            />
+        </div>
+
+        <div class="option setting">
+            <div class="option-title">
+                <Icon name="lucide:alert-triangle" size="24" />
+                <p>{{ t("settings.showSpeedAlert") || "Speed Alert Overlay" }}</p>
+            </div>
+
+            <SegmentedControl
+                :left-option="t('common.off')"
+                :right-option="t('common.on')"
+                :is-same-color="true"
+                @connect="toggleSpeedAlert"
+                :active="!activeSettings.showSpeedAlert"
                 size="normal"
             />
         </div>

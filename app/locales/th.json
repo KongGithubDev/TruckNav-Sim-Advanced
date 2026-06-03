@@ -103,6 +103,7 @@
         "showPoiDealers": "ดีลเลอร์รถบรรทุก",
         "showPoiOther": "อื่นๆ (ที่จอดรถ, โรงรถ, ...)",
         "showCityLabels": "ชื่อเมือง",
+        "showSpeedAlert": "แจ้งเตือนขับเร็วเกิน",
         "resetToDefaults": "รีเซ็ตเป็นค่าเริ่มต้น",
         "releaseDate": "วันที่วางจำหน่าย",
         "route": "เส้นทาง",

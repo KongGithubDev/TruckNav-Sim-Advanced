@@ -33,6 +33,7 @@ export interface GameProfile {
     showPoiDealers: boolean;
     showPoiOther: boolean;
     showCityLabels: boolean;
+    showSpeedAlert: boolean;
     routeType: "fastest" | "shortest";
     avoidFerries: boolean;
     voiceLanguage: string;
@@ -91,6 +92,7 @@ const DEFAULT_PROFILE: GameProfile = {
     showPoiDealers: true,
     showPoiOther: true,
     showCityLabels: true,
+    showSpeedAlert: true,
     routeType: "fastest",
     avoidFerries: false,
     voiceLanguage: "", // Will use system default if empty
