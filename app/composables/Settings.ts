@@ -25,7 +25,6 @@ export interface GameProfile {
     trafficServerId: number;
     autoDayNightTheme: boolean;
     voiceWarnings: boolean;
-    weatherOverlay: boolean;
     keepScreenOn: boolean;
     enable3DMode: boolean;
     autoFollowEnabled: boolean;
@@ -79,7 +78,6 @@ const DEFAULT_PROFILE: GameProfile = {
     trafficServerId: 2,
     autoDayNightTheme: true,
     voiceWarnings: true,
-    weatherOverlay: true,
     keepScreenOn: true,
     enable3DMode: false,
     autoFollowEnabled: true,

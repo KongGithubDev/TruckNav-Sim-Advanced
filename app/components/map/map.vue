@@ -10,7 +10,6 @@ import { convertEts2ToGeo, convertAtsToGeo } from "~/assets/utils/map/converters
 import { buildVoiceDirection, buildCombinedVoiceDirection } from "~/assets/utils/routing/directions";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { cleanupMapLibre } from "~/composables/MapLibre";
-import { useWeatherOverlay } from "~/composables/useWeatherOverlay";
 
 defineProps<{ goHome: () => void }>();
 
@@ -138,8 +137,6 @@ const {
 const { activeSettings, settings, updateProfile } = useSettings();
 
 //
-// Weather Overlay
-const { setupWeatherOverlay, teardownWeatherOverlay, updateWeather } = useWeatherOverlay(map);
 const { t } = useTranslations();
 const { speakWarning } = useVoiceWarnings();
 
@@ -549,11 +546,6 @@ watch([loading, gameConnected], ([isLoading, isGameConnected]) => {
     }
 });
 
-// Watch weather overlay: update when wipers or gameTime changes
-watch([wipers, gameTime, () => activeSettings.value.weatherOverlay], ([wip, gt]) => {
-    updateWeather(wip, gt);
-});
-
 watch(gameConnected, (isConnected) => {
     if (!map.value) return;
     if (!isConnected) {
@@ -699,7 +691,6 @@ onMounted(async () => {
             );
 
             setupRouteLayer();
-            setupWeatherOverlay();
             initCameraListeners();
 
             // Setup traffic layers
@@ -774,7 +765,6 @@ onUnmounted(() => {
     stopTelemetry();
     destroyWorker();
     stopPolling();
-    teardownWeatherOverlay();
     cleanupMapLibre();
 
     if (routeTimer) clearTimeout(routeTimer);

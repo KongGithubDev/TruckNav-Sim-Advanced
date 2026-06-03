@@ -212,23 +212,7 @@ function toggleCityLabels() {
             </div>
         </Transition>
 
-        <div class="option setting">
-            <div class="option-title">
-                <Icon name="lucide:cloud-rain" size="24" />
-                <p>{{ t("settings.weatherOverlay") || "Weather Overlay" }}</p>
-            </div>
-
-            <SegmentedControl
-                :left-option="t('common.off')"
-                :right-option="t('common.on')"
-                :is-same-color="true"
-                @connect="() => updateProfile('weatherOverlay', !activeSettings.weatherOverlay)"
-                :active="!activeSettings.weatherOverlay"
-                size="normal"
-            />
-        </div>
-
-        <div class="small-separator"></div>
+<div class="small-separator"></div>
 
         <!-- Map Display Section -->
         <div class="option setting" style="padding-top: 4px; padding-bottom: 4px;">
