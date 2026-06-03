@@ -117,7 +117,9 @@
         "voiceStraightLong": "Geradeaus (10+ km)",
         "voiceDistances": "Sprachdistanzen",
         "voiceTraffic": "Verkehrswarnung",
-        "testVoice": "Test Stimme"
+        "testVoice": "Test Stimme",
+        "turnZoom": "Auto-Zoom-Distanz",
+        "turnZoomDesc": "Zoomen wenn Abbiegung <"
     },
     "uiComponents": {
         "fuelDescription": "Zeigt deinen verbleibenden Kraftstoff an und pulsiert bei niedrigem Stand.",

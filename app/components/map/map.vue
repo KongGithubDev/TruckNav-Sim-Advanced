@@ -159,8 +159,9 @@ watch([nextTurnDistance, fullRouteDirections, isNavigating], ([dist, dirs, nav])
         return;
     }
     
-    // Auto-zoom on turns
-    if (dist > 0 && dist < 0.8) {
+    // Auto-zoom on turns — use configurable distance from settings
+    const zoomKm = activeSettings.value.turnZoomKm ?? 0.8;
+    if (dist > 0 && dist < zoomKm) {
         setTurnCamera(true);
     } else {
         setTurnCamera(false);

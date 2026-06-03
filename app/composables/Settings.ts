@@ -43,6 +43,7 @@ export interface GameProfile {
         turnNowStart: number;   // km — announce when distance < this value
         straightLongStart: number; // km — announce long straight when > this
     };
+    turnZoomKm: number; // km — auto-zoom trigger distance before turn
 }
 
 export interface AppSettingsState {
@@ -90,6 +91,7 @@ const DEFAULT_PROFILE: GameProfile = {
         turnNowStart: 0.08,    // < 0.08 km
         straightLongStart: 10, // > 10 km
     },
+    turnZoomKm: 0.8,         // km — auto-zoom 0.8km before turn
 };
 
 function createDefaultSettings(): AppSettingsState {

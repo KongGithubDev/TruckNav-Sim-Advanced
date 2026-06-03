@@ -506,46 +506,74 @@ watch(() => activeSettings.value.themeColor, updatePreviewIcon, {
                         <div style="display: flex; justify-content: space-between; font-size: 1rem; color: #666; margin-top: 2px;">
                             <span>2 km</span>
                             <span>50 km</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Test voice button -->
-                <button
-                    class="test-voice-btn"
-                    @click="handleTestVoice"
-                    style="
-                        margin-top: 14px;
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        padding: 8px 16px;
-                        background: var(--theme-color);
-                        color: #fff;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 1.3rem;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: opacity 0.2s;
-                    "
-                >
-                    <Icon name="lucide:volume-2" size="18" />
-                    {{ t("settings.testVoice") || "Test Voice" }}
-                </button>
-
-                <!-- Voice language note -->
-                <p style="
-                    margin-top: 12px;
-                    font-size: 1.2rem;
-                    color: #a1a1aa;
-                    line-height: 1.6;
-                ">
-                    <Icon name="lucide:info" size="14" style="vertical-align: middle; margin-right: 4px;" />
-                    {{ t("settings.voiceNote") }}
-                </p>
+                        </div>                </div>
             </div>
         </Transition>
+
+        <!-- Turn Zoom Distance (always visible, not voice-dependent) -->
+        <div style="margin-top: 14px; padding-top: 12px; margin-left: 30px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <Icon name="lucide:search" size="16" style="color: #a1a1aa;" />
+                <span style="font-size: 1.3rem; color: #a1a1aa; font-weight: 600;">
+                    {{ t("settings.turnZoom") || "Auto-Zoom Distance" }}
+                </span>
+            </div>
+
+            <div class="voice-distance-slider">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 1.3rem; color: #d4d4d8;">🔍 {{ t("settings.turnZoomDesc") || "Zoom when turn <" }}</span>
+                    <span style="font-size: 1.3rem; color: #22d3ee; font-weight: 600;">{{ (activeSettings.turnZoomKm ?? 0.8) * 1000 }} m</span>
+                </div>
+                <input
+                    type="range"
+                    min="0.05"
+                    max="3"
+                    step="0.05"
+                    :value="activeSettings.turnZoomKm ?? 0.8"
+                    @input="(e: any) => updateProfile('turnZoomKm', parseFloat(e.target.value))"
+                    style="width: 100%; height: 6px; -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.12); border-radius: 3px; outline: none; cursor: pointer;"
+                />
+                <div style="display: flex; justify-content: space-between; font-size: 1rem; color: #666; margin-top: 2px;">
+                    <span>50 m</span>
+                    <span>3 km</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test voice button -->
+        <button
+            class="test-voice-btn"
+            @click="handleTestVoice"
+            style="
+                margin-top: 14px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 16px;
+                background: var(--theme-color);
+                color: #fff;
+                border: none;
+                border-radius: 8px;
+                font-size: 1.3rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: opacity 0.2s;
+            "
+        >
+            <Icon name="lucide:volume-2" size="18" />
+            {{ t("settings.testVoice") || "Test Voice" }}
+        </button>
+
+        <!-- Voice language note -->
+        <p style="
+            margin-top: 12px;
+            font-size: 1.2rem;
+            color: #a1a1aa;
+            line-height: 1.6;
+        ">
+            <Icon name="lucide:info" size="14" style="vertical-align: middle; margin-right: 4px;" />
+            {{ t("settings.voiceNote") }}
+        </p>
 
         <div class="option setting">
             <div class="option-title">

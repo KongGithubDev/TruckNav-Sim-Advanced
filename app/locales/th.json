@@ -117,7 +117,9 @@
         "voiceStraightLong": "ทางตรง (10+ กม.)",
         "voiceDistances": "ตั้งระยะแจ้งเตือน",
         "voiceTraffic": "แจ้งเตือนจราจร",
-        "testVoice": "ทดสอบเสียง"
+        "testVoice": "ทดสอบเสียง",
+        "turnZoom": "ระยะซูมอัตโนมัติ",
+        "turnZoomDesc": "ซูมเมื่อใกล้ถึง <"
     },
     "uiComponents": {
         "fuelDescription": "แสดงระดับน้ำมันที่เหลืออยู่และจะกะพริบเมื่อน้ำมันใกล้หมด",

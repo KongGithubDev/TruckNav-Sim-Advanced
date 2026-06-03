@@ -117,7 +117,9 @@
         "voiceStraightLong": "Straight (10+ km)",
         "voiceDistances": "Voice Distances",
         "voiceTraffic": "Traffic Alert",
-        "testVoice": "Test Voice"
+        "testVoice": "Test Voice",
+        "turnZoom": "Auto-Zoom Distance",
+        "turnZoomDesc": "Zoom when turn <"
     },
     "uiComponents": {
         "fuelDescription": "Shows your remaining fuel level and it pulses when running low.",

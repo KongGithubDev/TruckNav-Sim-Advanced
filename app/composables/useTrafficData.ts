@@ -144,10 +144,12 @@ export function calculateRouteTrafficInfo(
         // With speed data: adjust thresholds by speed
         // Slower speed = more sensitive (thresholds lowered by up to 2x)
         // Full speed = original thresholds (avoids false red on busy highways)
+        // Sampling radius ~2.8km, so thresholds reflect realistic player density per ~2.8km stretch
         if (avgSpeed !== undefined) {
             const speedAdj = 0.5 + avgSpeed * 0.5; // 0.5 (stopped) → 1.0 (full speed)
-            const redThreshold = Math.round(12 * speedAdj);   // 6 → 12
-            const oraThreshold = Math.round(5 * speedAdj);    // 3 → 5
+            const redThreshold = Math.round(30 * speedAdj);   // 15 → 30
+            const oraThreshold = Math.round(15 * speedAdj);   // 8 → 15
+            const grnThreshold = Math.round(8 * speedAdj);    // 4 → 8
 
             if (playersNear >= redThreshold) {
                 return { color: "#f44336", isCongested: true };
@@ -155,20 +157,20 @@ export function calculateRouteTrafficInfo(
             if (playersNear >= oraThreshold) {
                 return { color: "#ff9800", isCongested: false };
             }
-            if (playersNear >= 2) {
+            if (playersNear >= grnThreshold) {
                 return { color: "#4caf50", isCongested: false };
             }
             return { color: null, isCongested: false };
         }
 
-        // Fallback: count only (original logic — no speed data available)
-        if (playersNear >= 12) {
+        // Fallback: count only (no speed data available)
+        if (playersNear >= 30) {
             return { color: "#f44336", isCongested: true };
         }
-        if (playersNear >= 5) {
+        if (playersNear >= 15) {
             return { color: "#ff9800", isCongested: false };
         }
-        if (playersNear >= 2) {
+        if (playersNear >= 8) {
             return { color: "#4caf50", isCongested: false };
         }
         return { color: null, isCongested: false };
